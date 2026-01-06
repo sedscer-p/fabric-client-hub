@@ -1,11 +1,19 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import { Sidebar } from '@/components/dashboard/Sidebar';
+import { MainPanel } from '@/components/dashboard/MainPanel';
+import { Client } from '@/data/mockData';
 
 const Index = () => {
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="flex min-h-screen w-full">
+      <Sidebar 
+        selectedClient={selectedClient} 
+        onClientSelect={setSelectedClient} 
+      />
+      <div className="ml-[280px] flex-1">
+        <MainPanel client={selectedClient} />
       </div>
     </div>
   );
