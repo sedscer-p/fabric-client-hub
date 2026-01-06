@@ -10,17 +10,14 @@ const Index = () => {
   const [selectedMeetingType, setSelectedMeetingType] = useState<string>('');
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [meetingSummary, setMeetingSummary] = useState<string>('');
-  const [showMeetingView, setShowMeetingView] = useState(true);
 
   const handleStartRecording = () => {
     setRecordingState('recording');
     setMeetingSummary('');
-    setShowMeetingView(true);
   };
 
   const handleStopRecording = () => {
     setRecordingState('processing');
-    // Simulate processing delay
     setTimeout(() => {
       setRecordingState('complete');
       setMeetingSummary(`Meeting Summary - ${meetingTypes.find(t => t.id === selectedMeetingType)?.label || 'Meeting'}
@@ -42,19 +39,15 @@ Client expressed satisfaction with current strategy. Will reconvene in 30 days t
     }, 3000);
   };
 
-  const handleResetMeeting = () => {
-    setRecordingState('idle');
-    setMeetingSummary('');
-    setSelectedMeetingType('');
-    setShowMeetingView(true);
-  };
-
   const handleClientSelect = (client: Client | null) => {
     // If changing client during active meeting, reset everything
     if (recordingState !== 'idle' && client?.id !== selectedClient?.id) {
-      handleResetMeeting();
+      setRecordingState('idle');
+      setMeetingSummary('');
+      setSelectedMeetingType('');
     }
     setSelectedClient(client);
+    setActiveView('documentation');
   };
 
   const getMeetingTypeLabel = () => {
@@ -71,13 +64,8 @@ Client expressed satisfaction with current strategy. Will reconvene in 30 days t
         activeView={activeView}
         onViewChange={setActiveView}
         selectedMeetingType={selectedMeetingType}
-        onMeetingTypeChange={setSelectedMeetingType}
-        onStartRecording={handleStartRecording}
         isRecording={recordingState === 'recording'}
         isMeetingActive={isMeetingActive}
-        onResetMeeting={handleResetMeeting}
-        showMeetingView={showMeetingView}
-        onToggleMeetingView={setShowMeetingView}
       />
       <div className="ml-[260px] flex-1">
         <MainPanel 
@@ -85,9 +73,11 @@ Client expressed satisfaction with current strategy. Will reconvene in 30 days t
           activeView={activeView}
           recordingState={recordingState}
           meetingType={getMeetingTypeLabel()}
+          selectedMeetingType={selectedMeetingType}
+          onMeetingTypeChange={setSelectedMeetingType}
+          onStartRecording={handleStartRecording}
           onStopRecording={handleStopRecording}
           meetingSummary={meetingSummary}
-          showMeetingView={showMeetingView}
         />
       </div>
     </div>
