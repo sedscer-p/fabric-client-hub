@@ -1,4 +1,5 @@
-import { FileText, BookOpen, CheckSquare, MessageCircle, User, Mic, Calendar } from 'lucide-react';
+import { useState } from 'react';
+import { FileText, BookOpen, CheckSquare, MessageCircle, User, Mic, Calendar, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -7,6 +8,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { clients, Client, ViewType, meetingTypes } from '@/data/mockData';
 
 interface SidebarProps {
@@ -30,9 +32,14 @@ export function Sidebar({
   onStartRecording,
   isRecording
 }: SidebarProps) {
+  const [isClientViewExpanded, setIsClientViewExpanded] = useState(true);
+  const [isMeetingExpanded, setIsMeetingExpanded] = useState(false);
+  const [hasConsent, setHasConsent] = useState(false);
+
   const handleClientChange = (clientId: string) => {
     const client = clients.find((c) => c.id === clientId) || null;
     onClientSelect(client);
+    setHasConsent(false);
   };
 
   const viewOptions = [
@@ -45,6 +52,8 @@ export function Sidebar({
   const handleRecordMeeting = () => {
     onStartRecording();
   };
+
+  const canRecord = selectedMeetingType && hasConsent && !isRecording;
 
   return (
     <aside className="w-[260px] h-screen bg-card border-r border-border flex flex-col fixed left-0 top-0">
@@ -78,70 +87,116 @@ export function Sidebar({
       {/* View Toggles - Only shown when client is selected */}
       {selectedClient && (
         <>
-          <div className="px-4 pb-6">
-            <p className="sidebar-label">Client View</p>
-            <div className="space-y-1">
-              {viewOptions.map((option) => {
-                const isSelected = activeView === option.id;
-                return (
-                  <button
-                    key={option.id}
-                    onClick={() => onViewChange(option.id)}
-                    className={`w-full nav-item transition-fast ${
-                      isSelected ? 'nav-item-selected' : 'nav-item-default'
-                    }`}
-                  >
-                    <option.icon 
-                      className="w-[18px] h-[18px] mt-0.5 shrink-0" 
-                      strokeWidth={1.5}
-                    />
-                    <div className="text-left">
-                      <p className={`text-sm ${isSelected ? 'font-medium' : 'font-normal'}`}>
-                        {option.label}
-                      </p>
-                      <p className="text-xs text-muted-foreground nav-item-description">
-                        {option.description}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Meeting Type Selection */}
+          {/* Client View Section - Collapsible */}
           <div className="px-4 pb-4">
-            <p className="sidebar-label">Choose Meeting Type</p>
-            <Select
-              value={selectedMeetingType}
-              onValueChange={onMeetingTypeChange}
+            <button
+              onClick={() => setIsClientViewExpanded(!isClientViewExpanded)}
+              className="w-full flex items-center justify-between py-2 text-left"
             >
-              <SelectTrigger className="w-full h-10 bg-card border-border text-sm font-normal px-3 focus:ring-2 focus:ring-offset-0 focus:ring-accent-subtle focus:border-primary">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-                  <SelectValue placeholder="Select meeting type" />
-                </div>
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                {meetingTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id} className="text-sm">
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <span className="sidebar-label mb-0">Client View</span>
+              {isClientViewExpanded ? (
+                <ChevronDown className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+              )}
+            </button>
+            
+            {isClientViewExpanded && (
+              <div className="space-y-1 mt-2">
+                {viewOptions.map((option) => {
+                  const isSelected = activeView === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      onClick={() => onViewChange(option.id)}
+                      className={`w-full nav-item transition-fast ${
+                        isSelected ? 'nav-item-selected' : 'nav-item-default'
+                      }`}
+                    >
+                      <option.icon 
+                        className="w-[18px] h-[18px] mt-0.5 shrink-0" 
+                        strokeWidth={1.5}
+                      />
+                      <div className="text-left">
+                        <p className={`text-sm ${isSelected ? 'font-medium' : 'font-normal'}`}>
+                          {option.label}
+                        </p>
+                        <p className="text-xs text-muted-foreground nav-item-description">
+                          {option.description}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Record Meeting Button */}
-          <div className="px-4 pb-6">
-            <Button 
-              onClick={handleRecordMeeting}
-              disabled={!selectedMeetingType || isRecording}
-              className="w-full h-10 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          {/* Start a Meeting Section - Collapsible */}
+          <div className="px-4 pb-4">
+            <button
+              onClick={() => setIsMeetingExpanded(!isMeetingExpanded)}
+              className="w-full flex items-center justify-between py-2 text-left"
             >
-              <Mic className="w-4 h-4 mr-2" strokeWidth={1.5} />
-              {isRecording ? 'Recording...' : 'Record Meeting'}
-            </Button>
+              <span className="sidebar-label mb-0">Start a Meeting</span>
+              {isMeetingExpanded ? (
+                <ChevronDown className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+              )}
+            </button>
+
+            {isMeetingExpanded && (
+              <div className="mt-2 space-y-4">
+                {/* Meeting Type Selection */}
+                <div>
+                  <Select
+                    value={selectedMeetingType}
+                    onValueChange={onMeetingTypeChange}
+                  >
+                    <SelectTrigger className="w-full h-10 bg-card border-border text-sm font-normal px-3 focus:ring-2 focus:ring-offset-0 focus:ring-accent-subtle focus:border-primary">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                        <SelectValue placeholder="Select meeting type" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      {meetingTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id} className="text-sm">
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Consent Checkbox */}
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="consent"
+                    checked={hasConsent}
+                    onCheckedChange={(checked) => setHasConsent(checked === true)}
+                    className="mt-0.5 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                  />
+                  <label 
+                    htmlFor="consent" 
+                    className="text-xs text-muted-foreground leading-relaxed cursor-pointer"
+                  >
+                    Client has consented to being recorded
+                  </label>
+                </div>
+
+                {/* Record Meeting Button */}
+                <Button 
+                  onClick={handleRecordMeeting}
+                  disabled={!canRecord}
+                  className="w-full h-10 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Mic className="w-4 h-4 mr-2" strokeWidth={1.5} />
+                  {isRecording ? 'Recording...' : 'Record Meeting'}
+                </Button>
+              </div>
+            )}
           </div>
         </>
       )}
