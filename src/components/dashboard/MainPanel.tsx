@@ -16,6 +16,7 @@ interface MainPanelProps {
   onMeetingTypeChange: (type: string) => void;
   onStartRecording: () => void;
   onStopRecording: () => void;
+  onAcceptSummary: (selectedDocuments: string[]) => void;
   meetingSummary: string;
 }
 
@@ -28,6 +29,7 @@ export function MainPanel({
   onMeetingTypeChange,
   onStartRecording,
   onStopRecording,
+  onAcceptSummary,
   meetingSummary
 }: MainPanelProps) {
   const isMeetingActive = recordingState !== 'idle';
@@ -67,7 +69,9 @@ export function MainPanel({
             <RecordingOverlay 
               state={recordingState}
               meetingType={meetingType}
+              meetingTypeId={selectedMeetingType}
               onStopRecording={onStopRecording}
+              onAcceptSummary={onAcceptSummary}
               meetingSummary={meetingSummary}
             />
           </div>

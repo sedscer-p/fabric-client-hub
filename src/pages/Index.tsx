@@ -39,6 +39,15 @@ Client expressed satisfaction with current strategy. Will reconvene in 30 days t
     }, 3000);
   };
 
+  const handleAcceptSummary = (selectedDocuments: string[]) => {
+    console.log('Summary accepted with documents:', selectedDocuments);
+    // Reset meeting state
+    setRecordingState('idle');
+    setMeetingSummary('');
+    setSelectedMeetingType('');
+    setActiveView('documentation');
+  };
+
   const handleClientSelect = (client: Client | null) => {
     // If changing client during active meeting, reset everything
     if (recordingState !== 'idle' && client?.id !== selectedClient?.id) {
@@ -77,6 +86,7 @@ Client expressed satisfaction with current strategy. Will reconvene in 30 days t
           onMeetingTypeChange={setSelectedMeetingType}
           onStartRecording={handleStartRecording}
           onStopRecording={handleStopRecording}
+          onAcceptSummary={handleAcceptSummary}
           meetingSummary={meetingSummary}
         />
       </div>
