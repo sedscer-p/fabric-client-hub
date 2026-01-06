@@ -44,6 +44,8 @@ Client expressed satisfaction with current strategy. Will reconvene in 30 days t
     return meetingTypes.find(t => t.id === selectedMeetingType)?.label || '';
   };
 
+  const isMeetingActive = recordingState !== 'idle';
+
   return (
     <div className="flex min-h-screen w-full bg-background">
       <Sidebar 
@@ -55,6 +57,7 @@ Client expressed satisfaction with current strategy. Will reconvene in 30 days t
         onMeetingTypeChange={setSelectedMeetingType}
         onStartRecording={handleStartRecording}
         isRecording={recordingState === 'recording'}
+        isMeetingActive={isMeetingActive}
       />
       <div className="ml-[260px] flex-1">
         <MainPanel 

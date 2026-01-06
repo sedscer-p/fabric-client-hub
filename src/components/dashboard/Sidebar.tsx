@@ -20,6 +20,7 @@ interface SidebarProps {
   onMeetingTypeChange: (type: string) => void;
   onStartRecording: () => void;
   isRecording: boolean;
+  isMeetingActive: boolean;
 }
 
 export function Sidebar({ 
@@ -30,7 +31,8 @@ export function Sidebar({
   selectedMeetingType,
   onMeetingTypeChange,
   onStartRecording,
-  isRecording
+  isRecording,
+  isMeetingActive
 }: SidebarProps) {
   const [isClientViewExpanded, setIsClientViewExpanded] = useState(true);
   const [isMeetingExpanded, setIsMeetingExpanded] = useState(false);
@@ -46,7 +48,6 @@ export function Sidebar({
     { id: 'documentation' as ViewType, label: 'Documentation', icon: FileText, description: 'Client profile & key documents' },
     { id: 'meeting-notes' as ViewType, label: 'Meeting Notes', icon: BookOpen, description: 'Transcriptions & summaries' },
     { id: 'meeting-prep' as ViewType, label: 'Meeting Prep', icon: CheckSquare, description: 'Actions to follow up' },
-    { id: 'ask' as ViewType, label: 'Ask', icon: MessageCircle, description: 'Query client & regulatory info' },
   ];
 
   const handleRecordMeeting = () => {
@@ -84,8 +85,8 @@ export function Sidebar({
         </Select>
       </div>
 
-      {/* View Toggles - Only shown when client is selected */}
-      {selectedClient && (
+      {/* View Toggles - Only shown when client is selected and meeting not active */}
+      {selectedClient && !isMeetingActive && (
         <>
           {/* Client View Section - Collapsible */}
           <div className="px-4 pb-4">
@@ -131,8 +132,11 @@ export function Sidebar({
               </div>
             )}
           </div>
+        </>
+      )}
 
-          {/* Start a Meeting Section - Collapsible */}
+      {/* Start a Meeting Section - Only shown when client is selected and meeting not active */}
+      {selectedClient && !isMeetingActive && (
           <div className="px-4 pb-4">
             <button
               onClick={() => setIsMeetingExpanded(!isMeetingExpanded)}
@@ -198,7 +202,23 @@ export function Sidebar({
               </div>
             )}
           </div>
-        </>
+      )}
+
+      {/* Meeting in Progress indicator */}
+      {selectedClient && isMeetingActive && (
+        <div className="px-4 pb-4">
+          <div className="card-minimal p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+              <div>
+                <p className="text-sm font-medium text-foreground">Meeting Active</p>
+                <p className="text-xs text-muted-foreground">
+                  {meetingTypes.find(t => t.id === selectedMeetingType)?.label}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Spacer */}

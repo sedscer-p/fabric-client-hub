@@ -3,8 +3,8 @@ import { ClientHeader } from './ClientHeader';
 import { DocumentationView } from './DocumentationView';
 import { MeetingNotesView } from './MeetingNotesView';
 import { MeetingPrepView } from './MeetingPrepView';
-import { AskTab } from './AskTab';
 import { RecordingOverlay, RecordingState } from './RecordingOverlay';
+import { AskBar } from './AskBar';
 
 interface MainPanelProps {
   client: Client | null;
@@ -23,6 +23,8 @@ export function MainPanel({
   onStopRecording,
   meetingSummary 
 }: MainPanelProps) {
+  const isMeetingActive = recordingState !== 'idle';
+
   if (!client) {
     return (
       <div className="flex-1 flex items-center justify-center bg-background min-h-screen">
@@ -38,19 +40,31 @@ export function MainPanel({
   return (
     <div className="flex-1 flex flex-col bg-background min-h-screen">
       <ClientHeader client={client} />
+      
+      {/* Ask Bar - Always accessible */}
+      <AskBar clientId={client.id} />
+      
       <div className="flex-1 overflow-auto">
-        <div className="main-content">
-          <RecordingOverlay 
-            state={recordingState}
-            meetingType={meetingType}
-            onStopRecording={onStopRecording}
-            meetingSummary={meetingSummary}
-          />
-        </div>
-        {activeView === 'documentation' && <DocumentationView clientId={client.id} />}
-        {activeView === 'meeting-notes' && <MeetingNotesView clientId={client.id} />}
-        {activeView === 'meeting-prep' && <MeetingPrepView clientId={client.id} />}
-        {activeView === 'ask' && <AskTab clientId={client.id} />}
+        {/* During meeting: show only recording overlay */}
+        {isMeetingActive && (
+          <div className="main-content">
+            <RecordingOverlay 
+              state={recordingState}
+              meetingType={meetingType}
+              onStopRecording={onStopRecording}
+              meetingSummary={meetingSummary}
+            />
+          </div>
+        )}
+
+        {/* Before meeting: show client views */}
+        {!isMeetingActive && (
+          <>
+            {activeView === 'documentation' && <DocumentationView clientId={client.id} />}
+            {activeView === 'meeting-notes' && <MeetingNotesView clientId={client.id} />}
+            {activeView === 'meeting-prep' && <MeetingPrepView clientId={client.id} />}
+          </>
+        )}
       </div>
     </div>
   );
