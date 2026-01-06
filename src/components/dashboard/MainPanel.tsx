@@ -3,6 +3,7 @@ import { ClientHeader } from './ClientHeader';
 import { DocumentationView } from './DocumentationView';
 import { MeetingNotesView } from './MeetingNotesView';
 import { MeetingPrepView } from './MeetingPrepView';
+import { AskTab } from './AskTab';
 
 interface MainPanelProps {
   client: Client | null;
@@ -35,6 +36,7 @@ export function MainPanel({ client, activeView }: MainPanelProps) {
         {activeView === 'documentation' && <DocumentationView clientId={client.id} />}
         {activeView === 'meeting-notes' && <MeetingNotesView clientId={client.id} />}
         {activeView === 'meeting-prep' && <MeetingPrepView clientId={client.id} />}
+        {activeView === 'ask' && <AskTab clientId={client.id} />}
       </div>
     </div>
   );

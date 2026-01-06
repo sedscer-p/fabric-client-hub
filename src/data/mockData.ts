@@ -48,7 +48,7 @@ export interface MeetingPrepItem {
   fromMeetingDate: string;
 }
 
-export type ViewType = 'documentation' | 'meeting-notes' | 'meeting-prep';
+export type ViewType = 'documentation' | 'meeting-notes' | 'meeting-prep' | 'ask';
 
 export const clients: Client[] = [
   {
