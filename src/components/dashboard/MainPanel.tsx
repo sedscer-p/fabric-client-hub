@@ -3,6 +3,7 @@ import { ClientHeader } from './ClientHeader';
 import { DocumentationView } from './DocumentationView';
 import { MeetingNotesView } from './MeetingNotesView';
 import { MeetingPrepView } from './MeetingPrepView';
+import { StartMeetingView } from './StartMeetingView';
 import { RecordingOverlay, RecordingState } from './RecordingOverlay';
 import { AskBar } from './AskBar';
 
@@ -11,19 +12,23 @@ interface MainPanelProps {
   activeView: ViewType;
   recordingState: RecordingState;
   meetingType: string;
+  selectedMeetingType: string;
+  onMeetingTypeChange: (type: string) => void;
+  onStartRecording: () => void;
   onStopRecording: () => void;
   meetingSummary: string;
-  showMeetingView: boolean;
 }
 
 export function MainPanel({ 
   client, 
   activeView, 
   recordingState, 
-  meetingType, 
+  meetingType,
+  selectedMeetingType,
+  onMeetingTypeChange,
+  onStartRecording,
   onStopRecording,
-  meetingSummary,
-  showMeetingView
+  meetingSummary
 }: MainPanelProps) {
   const isMeetingActive = recordingState !== 'idle';
 
@@ -47,8 +52,17 @@ export function MainPanel({
       <AskBar clientId={client.id} />
       
       <div className="flex-1 overflow-auto">
-        {/* During meeting with meeting view selected: show recording overlay */}
-        {isMeetingActive && showMeetingView && (
+        {activeView === 'documentation' && <DocumentationView clientId={client.id} />}
+        {activeView === 'meeting-notes' && <MeetingNotesView clientId={client.id} />}
+        {activeView === 'meeting-prep' && <MeetingPrepView clientId={client.id} />}
+        {activeView === 'start-meeting' && !isMeetingActive && (
+          <StartMeetingView
+            selectedMeetingType={selectedMeetingType}
+            onMeetingTypeChange={onMeetingTypeChange}
+            onStartRecording={onStartRecording}
+          />
+        )}
+        {activeView === 'start-meeting' && isMeetingActive && (
           <div className="main-content">
             <RecordingOverlay 
               state={recordingState}
@@ -57,15 +71,6 @@ export function MainPanel({
               meetingSummary={meetingSummary}
             />
           </div>
-        )}
-
-        {/* During meeting with client view selected OR before meeting: show client views */}
-        {(!isMeetingActive || !showMeetingView) && (
-          <>
-            {activeView === 'documentation' && <DocumentationView clientId={client.id} />}
-            {activeView === 'meeting-notes' && <MeetingNotesView clientId={client.id} />}
-            {activeView === 'meeting-prep' && <MeetingPrepView clientId={client.id} />}
-          </>
         )}
       </div>
     </div>
