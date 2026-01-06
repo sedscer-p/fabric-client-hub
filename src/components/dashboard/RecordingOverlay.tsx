@@ -14,27 +14,11 @@ interface RecordingOverlayProps {
   meetingSummary?: string;
 }
 
-const discoveryDocuments = [
-  { 
-    id: 'risk-tolerance', 
-    label: 'Risk Tolerance Assessment',
-    description: 'Investment objectives, income/expenditure, assets/liabilities, knowledge and experience, ability to bear investment risks'
-  },
-  { 
-    id: 'fact-find', 
-    label: 'Fact-Find/Know Your Customer Record',
-    description: "Client's psychological willingness to take risk, investment experience, risk preferences"
-  },
-  { 
-    id: 'capacity-for-loss', 
-    label: 'Capacity for Loss Assessment',
-    description: "Client's ability to absorb falls in investment value, known future spending requirements, emergency funds, other financial resources"
-  },
-  { 
-    id: 'financial-objectives', 
-    label: 'Financial Objectives Record',
-    description: 'Investment purposes, time horizon, risk preferences, specific goals with priorities'
-  },
+const discoveryReportSections = [
+  'Risk Tolerance Assessment',
+  'Fact-Find/Know Your Customer Record',
+  'Capacity for Loss Assessment',
+  'Financial Objectives Record'
 ];
 
 export function RecordingOverlay({ 
@@ -47,7 +31,7 @@ export function RecordingOverlay({
 }: RecordingOverlayProps) {
   const [elapsed, setElapsed] = useState(0);
   const [summaryAccepted, setSummaryAccepted] = useState(false);
-  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+  const [generateReport, setGenerateReport] = useState(false);
 
   const isDiscoveryMeeting = meetingTypeId === 'discovery';
 
@@ -68,7 +52,7 @@ export function RecordingOverlay({
   useEffect(() => {
     if (state !== 'complete') {
       setSummaryAccepted(false);
-      setSelectedDocuments([]);
+      setGenerateReport(false);
     }
   }, [state]);
 
@@ -78,13 +62,6 @@ export function RecordingOverlay({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleDocumentToggle = (docId: string) => {
-    setSelectedDocuments(prev => 
-      prev.includes(docId) 
-        ? prev.filter(id => id !== docId)
-        : [...prev, docId]
-    );
-  };
 
   const handleAcceptSummary = () => {
     if (isDiscoveryMeeting) {
@@ -94,8 +71,8 @@ export function RecordingOverlay({
     }
   };
 
-  const handleFinish = () => {
-    onAcceptSummary(selectedDocuments);
+  const handleFinish = (withReport: boolean) => {
+    onAcceptSummary(withReport ? ['discovery-report'] : []);
   };
 
   if (state === 'idle') return null;
@@ -179,7 +156,7 @@ export function RecordingOverlay({
       );
     }
 
-    // Step 2: Document selection (only for discovery meetings)
+    // Step 2: Discovery Report option (only for discovery meetings)
     if (summaryAccepted && isDiscoveryMeeting) {
       return (
         <div className="space-y-6">
@@ -196,62 +173,66 @@ export function RecordingOverlay({
             </div>
           </div>
 
-          {/* Document Generation Options */}
+          {/* Discovery Report Option */}
           <div className="card-minimal p-6">
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <FileText className="w-4 h-4 text-primary" strokeWidth={1.5} />
-                <p className="section-header mb-0">Generate Documents</p>
+                <p className="section-header mb-0">Generate Discovery Report</p>
               </div>
               <p className="text-xs text-muted-foreground">
-                Select which documents to generate from this discovery meeting
+                Generate a comprehensive discovery report from this meeting
               </p>
             </div>
-            <div className="space-y-3">
-              {discoveryDocuments.map((doc) => (
-                <div 
-                  key={doc.id}
-                  className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => handleDocumentToggle(doc.id)}
+            
+            <div 
+              className="flex items-start gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
+              onClick={() => setGenerateReport(!generateReport)}
+            >
+              <Checkbox
+                id="discovery-report"
+                checked={generateReport}
+                onCheckedChange={() => setGenerateReport(!generateReport)}
+                className="mt-0.5 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+              <div className="flex-1">
+                <label 
+                  htmlFor="discovery-report" 
+                  className="text-sm font-medium text-foreground cursor-pointer block"
                 >
-                  <Checkbox
-                    id={doc.id}
-                    checked={selectedDocuments.includes(doc.id)}
-                    onCheckedChange={() => handleDocumentToggle(doc.id)}
-                    className="mt-0.5 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                  />
-                  <div className="flex-1">
-                    <label 
-                      htmlFor={doc.id} 
-                      className="text-sm font-medium text-foreground cursor-pointer block"
-                    >
-                      {doc.label}
-                    </label>
-                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                      {doc.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                  Discovery Report
+                </label>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Includes the following sections:
+                </p>
+                <ul className="mt-2 space-y-1">
+                  {discoveryReportSections.map((section) => (
+                    <li key={section} className="text-xs text-muted-foreground flex items-center gap-2">
+                      <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
+                      {section}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
 
           {/* Finish Button */}
           <div className="flex justify-end gap-3">
             <Button 
-              onClick={() => handleFinish()}
+              onClick={() => handleFinish(false)}
               variant="outline"
               className="h-10 px-6 border-border"
             >
               Skip
             </Button>
             <Button 
-              onClick={handleFinish}
-              disabled={selectedDocuments.length === 0}
+              onClick={() => handleFinish(true)}
+              disabled={!generateReport}
               className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               <FileText className="w-4 h-4 mr-2" strokeWidth={1.5} />
-              Generate {selectedDocuments.length} Document{selectedDocuments.length !== 1 ? 's' : ''}
+              Generate Report
             </Button>
           </div>
         </div>
