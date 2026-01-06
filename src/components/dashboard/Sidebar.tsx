@@ -1,4 +1,4 @@
-import { FileText, BookOpen, ClipboardCheck } from 'lucide-react';
+import { FileText, BookOpen, ClipboardCheck, MessageCircle } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -26,6 +26,7 @@ export function Sidebar({ selectedClient, onClientSelect, activeView, onViewChan
     { id: 'documentation' as ViewType, label: 'Documentation', icon: FileText, description: 'Client profile & key documents' },
     { id: 'meeting-notes' as ViewType, label: 'Meeting Notes', icon: BookOpen, description: 'Transcriptions & summaries' },
     { id: 'meeting-prep' as ViewType, label: 'Meeting Prep', icon: ClipboardCheck, description: 'Actions to follow up' },
+    { id: 'ask' as ViewType, label: 'Ask', icon: MessageCircle, description: 'Query client & regulatory info' },
   ];
 
   return (
