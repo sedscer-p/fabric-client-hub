@@ -1,6 +1,4 @@
-import { Calendar, FileText, Play, TrendingUp } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Calendar, Play, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { meetingNotes, overallTrends } from '@/data/mockData';
 import {
@@ -19,50 +17,57 @@ export function MeetingNotesView({ clientId }: MeetingNotesViewProps) {
   const trends = overallTrends[clientId] || [];
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Meeting Notes</h2>
+    <div className="px-12 pb-12 max-w-[800px]">
+      {/* Meeting Notes */}
+      <section>
+        <h2 className="section-header mb-4">Meeting Notes</h2>
         
         {notes.length === 0 ? (
-          <Card className="bg-card border-border">
-            <CardContent className="pt-6">
-              <p className="text-muted-foreground">No meeting notes available.</p>
-            </CardContent>
-          </Card>
+          <p className="text-sm text-muted-foreground">No meeting notes available.</p>
         ) : (
           <Accordion type="single" collapsible className="space-y-3">
             {notes.map((note) => (
-              <AccordionItem key={note.id} value={note.id} className="border border-border rounded-lg bg-card">
-                <AccordionTrigger className="px-4 hover:no-underline">
-                  <div className="flex items-center gap-4 text-left">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4" />
+              <AccordionItem 
+                key={note.id} 
+                value={note.id} 
+                className="border border-border rounded-lg bg-card overflow-hidden"
+              >
+                <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-secondary transition-fast">
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Calendar className="w-4 h-4" strokeWidth={1.5} />
                       {new Date(note.date).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',
                       })}
                     </div>
-                    <Badge variant="secondary">{note.type}</Badge>
+                    <span className="text-xs text-secondary-foreground bg-secondary px-2 py-0.5 rounded">
+                      {note.type}
+                    </span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
-                  <div className="space-y-4">
+                  <div className="space-y-4 pt-2">
                     <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-1">Summary</h4>
-                      <p className="text-foreground">{note.summary}</p>
+                      <p className="label-text mb-1">Summary</p>
+                      <p className="text-sm text-foreground">{note.summary}</p>
                     </div>
                     
                     <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-1">Transcription</h4>
-                      <p className="text-foreground text-sm bg-secondary/50 p-3 rounded-lg">
+                      <p className="label-text mb-1">Transcription</p>
+                      <p className="text-sm text-foreground bg-secondary p-3 rounded-lg">
                         {note.transcription}
                       </p>
                     </div>
                     
                     {note.hasAudio && (
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Play className="w-4 h-4" />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="gap-2 h-10 text-sm font-medium border-border hover:bg-secondary"
+                      >
+                        <Play className="w-4 h-4" strokeWidth={1.5} />
                         Play Audio Recording
                       </Button>
                     )}
@@ -72,30 +77,24 @@ export function MeetingNotesView({ clientId }: MeetingNotesViewProps) {
             ))}
           </Accordion>
         )}
-      </div>
+      </section>
 
-      <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-primary" />
-          Overall Trends
-        </h2>
-        <Card className="bg-card border-border">
-          <CardContent className="pt-6">
-            {trends.length === 0 ? (
-              <p className="text-muted-foreground">No trends identified yet.</p>
-            ) : (
-              <ul className="space-y-3">
-                {trends.map((trend, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0" />
-                    <span className="text-foreground">{trend}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Overall Trends */}
+      <section className="mt-8">
+        <h2 className="section-header mb-4">Overall Trends</h2>
+        {trends.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No trends identified yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {trends.map((trend, index) => (
+              <li key={index} className="flex items-start gap-3">
+                <div className="bullet-accent" />
+                <span className="text-sm text-foreground">{trend}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

@@ -2,30 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 222 47% 11%;
+    /* Core palette - ProcessWise minimal design */
+    --background: 0 0% 98%;          /* #FAFAFA */
+    --foreground: 240 6% 10%;        /* #18181B */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 0 0% 100%;               /* #FFFFFF */
+    --card-foreground: 240 6% 10%;   /* #18181B */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 240 6% 10%;
 
-    --primary: 217 91% 53%;
+    --primary: 217 91% 60%;          /* #3B82F6 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 240 5% 96%;         /* #F4F4F5 */
+    --secondary-foreground: 240 4% 16%;  /* #52525B */
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;  /* #A1A1AA */
 
-    --accent: 217 91% 53%;
+    --accent: 217 91% 60%;           /* #3B82F6 */
     --accent-foreground: 0 0% 100%;
+    --accent-subtle: 214 100% 97%;   /* #EFF6FF */
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -36,52 +38,60 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 217 91% 53%;
+    --border: 240 6% 90%;            /* #E4E4E7 */
+    --input: 240 6% 90%;
+    --ring: 217 91% 60%;
 
     --radius: 0.5rem;
 
+    /* Sidebar */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-primary: 217 91% 53%;
+    --sidebar-foreground: 240 6% 10%;
+    --sidebar-border: 240 6% 90%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-ring: 217 91% 53%;
+    --sidebar-accent: 214 100% 97%;
+    --sidebar-accent-foreground: 217 91% 60%;
+    --sidebar-ring: 217 91% 60%;
 
-    /* Custom tokens */
-    --header-height: 4rem;
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
-    --shadow-card: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-elevated: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+    /* Spacing system (base 4px) */
+    --space-1: 0.25rem;   /* 4px */
+    --space-2: 0.5rem;    /* 8px */
+    --space-3: 0.75rem;   /* 12px */
+    --space-4: 1rem;      /* 16px */
+    --space-6: 1.5rem;    /* 24px */
+    --space-8: 2rem;      /* 32px */
+    --space-12: 3rem;     /* 48px */
+
+    /* Shadows - minimal */
+    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.04);
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    --background: 240 6% 6%;
+    --foreground: 0 0% 98%;
 
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 6% 8%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222 47% 8%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 6% 8%;
+    --popover-foreground: 0 0% 98%;
 
     --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
+    --primary-foreground: 240 6% 10%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
 
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 98%;
+    --accent-subtle: 217 33% 17%;
 
     --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
     --success: 142 71% 35%;
     --success-foreground: 0 0% 100%;
@@ -89,17 +99,17 @@
     --warning: 38 92% 40%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
     --ring: 217 91% 60%;
 
-    --sidebar-background: 222 47% 8%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
+    --sidebar-background: 240 6% 8%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-border: 240 4% 16%;
     --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-primary-foreground: 240 6% 10%;
     --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-ring: 217 91% 60%;
   }
 }
@@ -110,54 +120,113 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold tracking-tight;
+  /* Typography */
+  h1 {
+    @apply text-2xl font-semibold tracking-tight;
+    letter-spacing: -0.025em;
+    line-height: 1.3;
+  }
+
+  h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-normal;
+    line-height: 1.3;
+  }
+
+  p {
+    line-height: 1.5;
   }
 }
 
 @layer components {
+  /* Section headers */
+  .section-header {
+    @apply text-sm font-medium uppercase tracking-wider;
+    letter-spacing: 0.025em;
+    color: hsl(var(--secondary-foreground));
+  }
+
+  /* Labels */
+  .label-text {
+    @apply text-xs font-medium;
+    letter-spacing: 0.03em;
+    color: hsl(var(--secondary-foreground));
+  }
+
+  /* Small/caption text */
+  .caption-text {
+    @apply text-xs font-normal;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Sidebar styles */
   .sidebar-section {
-    @apply px-4 py-3;
+    @apply px-4 py-6;
   }
 
   .sidebar-label {
-    @apply text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2;
+    @apply text-xs font-medium uppercase tracking-wider mb-3;
+    letter-spacing: 0.025em;
+    color: hsl(var(--secondary-foreground));
   }
 
-  .status-chip {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  /* Nav item styles */
+  .nav-item {
+    @apply flex items-start gap-2 px-3 py-2.5 rounded-md transition-colors duration-150;
   }
 
-  .status-chip-pending {
-    @apply bg-warning/10 text-warning;
+  .nav-item-default {
+    @apply bg-transparent;
+    color: hsl(var(--secondary-foreground));
   }
 
-  .status-chip-complete {
-    @apply bg-success/10 text-success;
+  .nav-item-default:hover {
+    background: hsl(var(--secondary));
   }
 
-  .tab-button {
-    @apply px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative;
+  .nav-item-selected {
+    background: hsl(var(--accent-subtle));
+    color: hsl(var(--accent));
   }
 
-  .tab-button-active {
-    @apply text-foreground;
+  .nav-item-selected .nav-item-description {
+    color: hsl(var(--muted-foreground));
   }
 
-  .tab-button-active::after {
-    content: '';
-    @apply absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full;
+  /* Cards - minimal */
+  .card-minimal {
+    @apply bg-card border border-border rounded-lg p-4;
+    box-shadow: var(--shadow-card);
   }
 
+  /* Bullet points */
+  .bullet-accent {
+    @apply w-1.5 h-1.5 rounded-full shrink-0 mt-2;
+    background: hsl(var(--accent));
+  }
+
+  /* Chat bubbles */
   .chat-bubble-user {
-    @apply bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2.5;
+    @apply rounded-2xl rounded-br-md px-4 py-2.5;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
   }
 
   .chat-bubble-assistant {
-    @apply bg-secondary text-secondary-foreground rounded-2xl rounded-bl-md px-4 py-2.5;
+    @apply rounded-2xl rounded-bl-md px-4 py-2.5;
+    background: hsl(var(--secondary));
+    color: hsl(var(--foreground));
+  }
+}
+
+/* Transitions - 150ms ease-out */
+@layer utilities {
+  .transition-fast {
+    transition-property: background-color, border-color, opacity, transform;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
   }
 }
