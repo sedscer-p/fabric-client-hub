@@ -1,4 +1,4 @@
-import { FileText, BookOpen, CheckSquare, MessageCircle, User, ChevronDown } from 'lucide-react';
+import { FileText, BookOpen, CheckSquare, MessageCircle, User, Mic, Calendar } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -6,16 +6,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { clients, Client, ViewType } from '@/data/mockData';
+import { Button } from '@/components/ui/button';
+import { clients, Client, ViewType, meetingTypes } from '@/data/mockData';
 
 interface SidebarProps {
   selectedClient: Client | null;
   onClientSelect: (client: Client | null) => void;
   activeView: ViewType;
   onViewChange: (view: ViewType) => void;
+  selectedMeetingType: string;
+  onMeetingTypeChange: (type: string) => void;
 }
 
-export function Sidebar({ selectedClient, onClientSelect, activeView, onViewChange }: SidebarProps) {
+export function Sidebar({ 
+  selectedClient, 
+  onClientSelect, 
+  activeView, 
+  onViewChange,
+  selectedMeetingType,
+  onMeetingTypeChange 
+}: SidebarProps) {
   const handleClientChange = (clientId: string) => {
     const client = clients.find((c) => c.id === clientId) || null;
     onClientSelect(client);
@@ -27,6 +37,10 @@ export function Sidebar({ selectedClient, onClientSelect, activeView, onViewChan
     { id: 'meeting-prep' as ViewType, label: 'Meeting Prep', icon: CheckSquare, description: 'Actions to follow up' },
     { id: 'ask' as ViewType, label: 'Ask', icon: MessageCircle, description: 'Query client & regulatory info' },
   ];
+
+  const handleRecordMeeting = () => {
+    console.log('Recording meeting:', selectedMeetingType);
+  };
 
   return (
     <aside className="w-[260px] h-screen bg-card border-r border-border flex flex-col fixed left-0 top-0">
@@ -59,36 +73,73 @@ export function Sidebar({ selectedClient, onClientSelect, activeView, onViewChan
 
       {/* View Toggles - Only shown when client is selected */}
       {selectedClient && (
-        <div className="px-4 pb-6">
-          <p className="sidebar-label">Client View</p>
-          <div className="space-y-1">
-            {viewOptions.map((option) => {
-              const isSelected = activeView === option.id;
-              return (
-                <button
-                  key={option.id}
-                  onClick={() => onViewChange(option.id)}
-                  className={`w-full nav-item transition-fast ${
-                    isSelected ? 'nav-item-selected' : 'nav-item-default'
-                  }`}
-                >
-                  <option.icon 
-                    className="w-[18px] h-[18px] mt-0.5 shrink-0" 
-                    strokeWidth={1.5}
-                  />
-                  <div className="text-left">
-                    <p className={`text-sm ${isSelected ? 'font-medium' : 'font-normal'}`}>
-                      {option.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground nav-item-description">
-                      {option.description}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
+        <>
+          <div className="px-4 pb-6">
+            <p className="sidebar-label">Client View</p>
+            <div className="space-y-1">
+              {viewOptions.map((option) => {
+                const isSelected = activeView === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    onClick={() => onViewChange(option.id)}
+                    className={`w-full nav-item transition-fast ${
+                      isSelected ? 'nav-item-selected' : 'nav-item-default'
+                    }`}
+                  >
+                    <option.icon 
+                      className="w-[18px] h-[18px] mt-0.5 shrink-0" 
+                      strokeWidth={1.5}
+                    />
+                    <div className="text-left">
+                      <p className={`text-sm ${isSelected ? 'font-medium' : 'font-normal'}`}>
+                        {option.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground nav-item-description">
+                        {option.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+
+          {/* Meeting Type Selection */}
+          <div className="px-4 pb-4">
+            <p className="sidebar-label">Choose Meeting Type</p>
+            <Select
+              value={selectedMeetingType}
+              onValueChange={onMeetingTypeChange}
+            >
+              <SelectTrigger className="w-full h-10 bg-card border-border text-sm font-normal px-3 focus:ring-2 focus:ring-offset-0 focus:ring-accent-subtle focus:border-primary">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                  <SelectValue placeholder="Select meeting type" />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border">
+                {meetingTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.id} className="text-sm">
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Record Meeting Button */}
+          <div className="px-4 pb-6">
+            <Button 
+              onClick={handleRecordMeeting}
+              disabled={!selectedMeetingType}
+              className="w-full h-10 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Mic className="w-4 h-4 mr-2" strokeWidth={1.5} />
+              Record Meeting
+            </Button>
+          </div>
+        </>
       )}
 
       {/* Spacer */}
