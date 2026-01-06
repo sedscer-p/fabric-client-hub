@@ -13,6 +13,7 @@ interface MainPanelProps {
   meetingType: string;
   onStopRecording: () => void;
   meetingSummary: string;
+  showMeetingView: boolean;
 }
 
 export function MainPanel({ 
@@ -21,7 +22,8 @@ export function MainPanel({
   recordingState, 
   meetingType, 
   onStopRecording,
-  meetingSummary 
+  meetingSummary,
+  showMeetingView
 }: MainPanelProps) {
   const isMeetingActive = recordingState !== 'idle';
 
@@ -45,8 +47,8 @@ export function MainPanel({
       <AskBar clientId={client.id} />
       
       <div className="flex-1 overflow-auto">
-        {/* During meeting: show only recording overlay */}
-        {isMeetingActive && (
+        {/* During meeting with meeting view selected: show recording overlay */}
+        {isMeetingActive && showMeetingView && (
           <div className="main-content">
             <RecordingOverlay 
               state={recordingState}
@@ -57,8 +59,8 @@ export function MainPanel({
           </div>
         )}
 
-        {/* Before meeting: show client views */}
-        {!isMeetingActive && (
+        {/* During meeting with client view selected OR before meeting: show client views */}
+        {(!isMeetingActive || !showMeetingView) && (
           <>
             {activeView === 'documentation' && <DocumentationView clientId={client.id} />}
             {activeView === 'meeting-notes' && <MeetingNotesView clientId={client.id} />}

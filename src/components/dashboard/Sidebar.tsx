@@ -21,6 +21,9 @@ interface SidebarProps {
   onStartRecording: () => void;
   isRecording: boolean;
   isMeetingActive: boolean;
+  onResetMeeting?: () => void;
+  showMeetingView: boolean;
+  onToggleMeetingView: (show: boolean) => void;
 }
 
 export function Sidebar({ 
@@ -32,7 +35,10 @@ export function Sidebar({
   onMeetingTypeChange,
   onStartRecording,
   isRecording,
-  isMeetingActive
+  isMeetingActive,
+  onResetMeeting,
+  showMeetingView,
+  onToggleMeetingView
 }: SidebarProps) {
   const [isClientViewExpanded, setIsClientViewExpanded] = useState(true);
   const [isMeetingExpanded, setIsMeetingExpanded] = useState(false);
@@ -42,6 +48,10 @@ export function Sidebar({
     const client = clients.find((c) => c.id === clientId) || null;
     onClientSelect(client);
     setHasConsent(false);
+    // Reset meeting if changing client during active meeting
+    if (isMeetingActive && onResetMeeting) {
+      onResetMeeting();
+    }
   };
 
   const viewOptions = [
@@ -60,7 +70,8 @@ export function Sidebar({
     <aside className="w-[260px] h-screen bg-card border-r border-border flex flex-col fixed left-0 top-0">
       {/* Logo */}
       <div className="px-4 py-6">
-        <span className="text-xl font-semibold text-foreground">ProcessWise</span>
+        <span className="text-xl font-semibold text-foreground">Fabric</span>
+        <span className="text-xs text-muted-foreground ml-2">v0.1</span>
       </div>
 
       {/* Client Selection */}
@@ -85,53 +96,96 @@ export function Sidebar({
         </Select>
       </div>
 
-      {/* View Toggles - Only shown when client is selected and meeting not active */}
-      {selectedClient && !isMeetingActive && (
+      {/* View Toggles - Shown when client is selected */}
+      {selectedClient && (
         <>
-          {/* Client View Section - Collapsible */}
-          <div className="px-4 pb-4">
-            <button
-              onClick={() => setIsClientViewExpanded(!isClientViewExpanded)}
-              className="w-full flex items-center justify-between py-2 text-left"
-            >
-              <span className="sidebar-label mb-0">Client View</span>
-              {isClientViewExpanded ? (
-                <ChevronDown className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-              ) : (
-                <ChevronRight className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-              )}
-            </button>
-            
-            {isClientViewExpanded && (
+          {/* During meeting: toggle between Client View and Current Meeting */}
+          {isMeetingActive && (
+            <div className="px-4 pb-4">
+              <span className="sidebar-label">View</span>
               <div className="space-y-1 mt-2">
-                {viewOptions.map((option) => {
-                  const isSelected = activeView === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      onClick={() => onViewChange(option.id)}
-                      className={`w-full nav-item transition-fast ${
-                        isSelected ? 'nav-item-selected' : 'nav-item-default'
-                      }`}
-                    >
-                      <option.icon 
-                        className="w-[18px] h-[18px] mt-0.5 shrink-0" 
-                        strokeWidth={1.5}
-                      />
-                      <div className="text-left">
-                        <p className={`text-sm ${isSelected ? 'font-medium' : 'font-normal'}`}>
-                          {option.label}
-                        </p>
-                        <p className="text-xs text-muted-foreground nav-item-description">
-                          {option.description}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
+                <button
+                  onClick={() => onToggleMeetingView(false)}
+                  className={`w-full nav-item transition-fast ${
+                    !showMeetingView ? 'nav-item-selected' : 'nav-item-default'
+                  }`}
+                >
+                  <FileText className="w-[18px] h-[18px] mt-0.5 shrink-0" strokeWidth={1.5} />
+                  <div className="text-left">
+                    <p className={`text-sm ${!showMeetingView ? 'font-medium' : 'font-normal'}`}>
+                      Client View
+                    </p>
+                    <p className="text-xs text-muted-foreground nav-item-description">
+                      Documentation & notes
+                    </p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => onToggleMeetingView(true)}
+                  className={`w-full nav-item transition-fast ${
+                    showMeetingView ? 'nav-item-selected' : 'nav-item-default'
+                  }`}
+                >
+                  <Mic className="w-[18px] h-[18px] mt-0.5 shrink-0" strokeWidth={1.5} />
+                  <div className="text-left">
+                    <p className={`text-sm ${showMeetingView ? 'font-medium' : 'font-normal'}`}>
+                      Current Meeting
+                    </p>
+                    <p className="text-xs text-muted-foreground nav-item-description">
+                      Live recording & summary
+                    </p>
+                  </div>
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Client View Section - Collapsible (only before meeting) */}
+          {!isMeetingActive && (
+            <div className="px-4 pb-4">
+              <button
+                onClick={() => setIsClientViewExpanded(!isClientViewExpanded)}
+                className="w-full flex items-center justify-between py-2 text-left"
+              >
+                <span className="sidebar-label mb-0">Client View</span>
+                {isClientViewExpanded ? (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                )}
+              </button>
+              
+              {isClientViewExpanded && (
+                <div className="space-y-1 mt-2">
+                  {viewOptions.map((option) => {
+                    const isSelected = activeView === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        onClick={() => onViewChange(option.id)}
+                        className={`w-full nav-item transition-fast ${
+                          isSelected ? 'nav-item-selected' : 'nav-item-default'
+                        }`}
+                      >
+                        <option.icon 
+                          className="w-[18px] h-[18px] mt-0.5 shrink-0" 
+                          strokeWidth={1.5}
+                        />
+                        <div className="text-left">
+                          <p className={`text-sm ${isSelected ? 'font-medium' : 'font-normal'}`}>
+                            {option.label}
+                          </p>
+                          <p className="text-xs text-muted-foreground nav-item-description">
+                            {option.description}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </>
       )}
 
@@ -209,7 +263,7 @@ export function Sidebar({
         <div className="px-4 pb-4">
           <div className="card-minimal p-4">
             <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+              <div className="w-3 h-3 rounded-full bg-destructive animate-pulse" />
               <div>
                 <p className="text-sm font-medium text-foreground">Meeting Active</p>
                 <p className="text-xs text-muted-foreground">
@@ -227,7 +281,7 @@ export function Sidebar({
       {/* Footer */}
       <div className="px-4 py-4 border-t border-border">
         <p className="text-xs text-muted-foreground">
-          Fabric v1.0
+          Fabric v0.1
         </p>
       </div>
     </aside>
