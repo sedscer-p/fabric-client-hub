@@ -16,6 +16,8 @@ interface SidebarProps {
   onViewChange: (view: ViewType) => void;
   selectedMeetingType: string;
   onMeetingTypeChange: (type: string) => void;
+  onStartRecording: () => void;
+  isRecording: boolean;
 }
 
 export function Sidebar({ 
@@ -24,7 +26,9 @@ export function Sidebar({
   activeView, 
   onViewChange,
   selectedMeetingType,
-  onMeetingTypeChange 
+  onMeetingTypeChange,
+  onStartRecording,
+  isRecording
 }: SidebarProps) {
   const handleClientChange = (clientId: string) => {
     const client = clients.find((c) => c.id === clientId) || null;
@@ -39,7 +43,7 @@ export function Sidebar({
   ];
 
   const handleRecordMeeting = () => {
-    console.log('Recording meeting:', selectedMeetingType);
+    onStartRecording();
   };
 
   return (
@@ -132,11 +136,11 @@ export function Sidebar({
           <div className="px-4 pb-6">
             <Button 
               onClick={handleRecordMeeting}
-              disabled={!selectedMeetingType}
+              disabled={!selectedMeetingType || isRecording}
               className="w-full h-10 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Mic className="w-4 h-4 mr-2" strokeWidth={1.5} />
-              Record Meeting
+              {isRecording ? 'Recording...' : 'Record Meeting'}
             </Button>
           </div>
         </>
