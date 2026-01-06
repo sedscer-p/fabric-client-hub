@@ -1,4 +1,4 @@
-import { Mic, Square, Loader2, Check, FileText } from 'lucide-react';
+import { Mic, Square, Loader2, Check, FileText, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useEffect, useState } from 'react';
@@ -46,6 +46,7 @@ export function RecordingOverlay({
   meetingSummary 
 }: RecordingOverlayProps) {
   const [elapsed, setElapsed] = useState(0);
+  const [summaryAccepted, setSummaryAccepted] = useState(false);
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
 
   const isDiscoveryMeeting = meetingTypeId === 'discovery';
@@ -63,6 +64,14 @@ export function RecordingOverlay({
     return () => clearInterval(interval);
   }, [state]);
 
+  // Reset accepted state when recording state changes
+  useEffect(() => {
+    if (state !== 'complete') {
+      setSummaryAccepted(false);
+      setSelectedDocuments([]);
+    }
+  }, [state]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -77,7 +86,15 @@ export function RecordingOverlay({
     );
   };
 
-  const handleAccept = () => {
+  const handleAcceptSummary = () => {
+    if (isDiscoveryMeeting) {
+      setSummaryAccepted(true);
+    } else {
+      onAcceptSummary([]);
+    }
+  };
+
+  const handleFinish = () => {
     onAcceptSummary(selectedDocuments);
   };
 
@@ -130,23 +147,56 @@ export function RecordingOverlay({
   }
 
   if (state === 'complete' && meetingSummary) {
-    return (
-      <div className="space-y-6">
-        {/* Meeting Summary */}
-        <div className="card-minimal p-6">
-          <div className="mb-4">
-            <p className="section-header mb-2">Meeting Summary</p>
-            <p className="text-xs text-muted-foreground">{meetingType}</p>
-          </div>
-          <div className="prose prose-sm max-w-none">
-            <div className="text-sm text-foreground whitespace-pre-line leading-relaxed">
-              {meetingSummary}
+    // Step 1: Show summary and accept button
+    if (!summaryAccepted) {
+      return (
+        <div className="space-y-6">
+          <div className="card-minimal p-6">
+            <div className="mb-4">
+              <p className="section-header mb-2">Meeting Summary</p>
+              <p className="text-xs text-muted-foreground">{meetingType}</p>
+            </div>
+            <div className="prose prose-sm max-w-none">
+              <div className="text-sm text-foreground whitespace-pre-line leading-relaxed">
+                {meetingSummary}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Discovery Meeting Document Generation */}
-        {isDiscoveryMeeting && (
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleAcceptSummary}
+              className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Check className="w-4 h-4 mr-2" strokeWidth={1.5} />
+              Accept Summary
+              {isDiscoveryMeeting && (
+                <ArrowRight className="w-4 h-4 ml-2" strokeWidth={1.5} />
+              )}
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    // Step 2: Document selection (only for discovery meetings)
+    if (summaryAccepted && isDiscoveryMeeting) {
+      return (
+        <div className="space-y-6">
+          {/* Summary accepted confirmation */}
+          <div className="card-minimal p-4 bg-primary/5 border-primary/20">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <Check className="w-4 h-4 text-primary" strokeWidth={1.5} />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">Summary Accepted</p>
+                <p className="text-xs text-muted-foreground">{meetingType}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Document Generation Options */}
           <div className="card-minimal p-6">
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
@@ -185,23 +235,28 @@ export function RecordingOverlay({
               ))}
             </div>
           </div>
-        )}
 
-        {/* Accept Button */}
-        <div className="flex justify-end">
-          <Button 
-            onClick={handleAccept}
-            className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Check className="w-4 h-4 mr-2" strokeWidth={1.5} />
-            Accept Summary
-            {isDiscoveryMeeting && selectedDocuments.length > 0 && (
-              <span className="ml-1">& Generate {selectedDocuments.length} Document{selectedDocuments.length > 1 ? 's' : ''}</span>
-            )}
-          </Button>
+          {/* Finish Button */}
+          <div className="flex justify-end gap-3">
+            <Button 
+              onClick={() => handleFinish()}
+              variant="outline"
+              className="h-10 px-6 border-border"
+            >
+              Skip
+            </Button>
+            <Button 
+              onClick={handleFinish}
+              disabled={selectedDocuments.length === 0}
+              className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              <FileText className="w-4 h-4 mr-2" strokeWidth={1.5} />
+              Generate {selectedDocuments.length} Document{selectedDocuments.length !== 1 ? 's' : ''}
+            </Button>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   return null;
