@@ -1,5 +1,4 @@
 import { FileText, Target, TrendingDown, Clock } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { clientDocumentation, summaryPoints } from '@/data/mockData';
 
 interface DocumentationViewProps {
@@ -12,8 +11,8 @@ export function DocumentationView({ clientId }: DocumentationViewProps) {
 
   if (!documentation) {
     return (
-      <div className="p-6">
-        <p className="text-muted-foreground">No documentation available for this client.</p>
+      <div className="px-12 pb-12">
+        <p className="text-muted-foreground text-sm">No documentation available for this client.</p>
       </div>
     );
   }
@@ -26,41 +25,35 @@ export function DocumentationView({ clientId }: DocumentationViewProps) {
   ];
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Key Client Documentation</h2>
-        <div className="grid gap-4">
+    <div className="px-12 pb-12 max-w-[800px]">
+      {/* Key Client Documentation */}
+      <section>
+        <h2 className="section-header mb-4">Key Client Documentation</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {documentItems.map((item) => (
-            <Card key={item.label} className="bg-card border-border">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <item.icon className="w-4 h-4 text-primary" />
-                  {item.label}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-foreground">{item.value}</p>
-              </CardContent>
-            </Card>
+            <div key={item.label} className="card-minimal">
+              <div className="flex items-center gap-2 mb-1">
+                <item.icon className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+                <span className="label-text">{item.label}</span>
+              </div>
+              <p className="text-sm text-foreground">{item.value}</p>
+            </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div>
-        <h2 className="text-lg font-semibold text-foreground mb-4">Previous Meeting Summary</h2>
-        <Card className="bg-card border-border">
-          <CardContent className="pt-6">
-            <ul className="space-y-3">
-              {summary.map((point) => (
-                <li key={point.id} className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0" />
-                  <span className="text-foreground">{point.text}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Previous Meeting Summary */}
+      <section className="mt-8">
+        <h2 className="section-header mb-4">Previous Meeting Summary</h2>
+        <ul className="space-y-3">
+          {summary.map((point) => (
+            <li key={point.id} className="flex items-start gap-3">
+              <div className="bullet-accent" />
+              <span className="text-sm text-foreground">{point.text}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }

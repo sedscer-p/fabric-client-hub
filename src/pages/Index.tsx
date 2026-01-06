@@ -8,14 +8,14 @@ const Index = () => {
   const [activeView, setActiveView] = useState<ViewType>('documentation');
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex min-h-screen w-full bg-background">
       <Sidebar 
         selectedClient={selectedClient} 
         onClientSelect={setSelectedClient}
         activeView={activeView}
         onViewChange={setActiveView}
       />
-      <div className="ml-[280px] flex-1">
+      <div className="ml-[260px] flex-1">
         <MainPanel client={selectedClient} activeView={activeView} />
       </div>
     </div>

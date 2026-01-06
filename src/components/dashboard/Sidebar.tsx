@@ -1,4 +1,4 @@
-import { FileText, BookOpen, ClipboardCheck, MessageCircle } from 'lucide-react';
+import { FileText, BookOpen, CheckSquare, MessageCircle, User, ChevronDown } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -6,7 +6,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { clients, Client, ViewType } from '@/data/mockData';
 
 interface SidebarProps {
@@ -25,35 +24,32 @@ export function Sidebar({ selectedClient, onClientSelect, activeView, onViewChan
   const viewOptions = [
     { id: 'documentation' as ViewType, label: 'Documentation', icon: FileText, description: 'Client profile & key documents' },
     { id: 'meeting-notes' as ViewType, label: 'Meeting Notes', icon: BookOpen, description: 'Transcriptions & summaries' },
-    { id: 'meeting-prep' as ViewType, label: 'Meeting Prep', icon: ClipboardCheck, description: 'Actions to follow up' },
+    { id: 'meeting-prep' as ViewType, label: 'Meeting Prep', icon: CheckSquare, description: 'Actions to follow up' },
     { id: 'ask' as ViewType, label: 'Ask', icon: MessageCircle, description: 'Query client & regulatory info' },
   ];
 
   return (
-    <aside className="w-[280px] h-screen bg-sidebar border-r border-sidebar-border flex flex-col fixed left-0 top-0">
+    <aside className="w-[260px] h-screen bg-card border-r border-border flex flex-col fixed left-0 top-0">
       {/* Logo */}
-      <div className="h-16 px-5 flex items-center border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">F</span>
-          </div>
-          <span className="text-lg font-semibold text-sidebar-foreground">Fabric</span>
-        </div>
+      <div className="px-4 py-6">
+        <span className="text-xl font-semibold text-foreground">ProcessWise</span>
       </div>
 
       {/* Client Selection */}
-      <div className="sidebar-section border-b border-sidebar-border">
-        <label className="sidebar-label">Select Client</label>
+      <div className="px-4 pb-6">
         <Select
           value={selectedClient?.id || ''}
           onValueChange={handleClientChange}
         >
-          <SelectTrigger className="w-full bg-background">
-            <SelectValue placeholder="Choose a client..." />
+          <SelectTrigger className="w-full h-10 bg-card border-border text-sm font-normal px-3 focus:ring-2 focus:ring-offset-0 focus:ring-accent-subtle focus:border-primary">
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+              <SelectValue placeholder="Select Client" />
+            </div>
           </SelectTrigger>
-          <SelectContent className="bg-popover">
+          <SelectContent className="bg-card border-border">
             {clients.map((client) => (
-              <SelectItem key={client.id} value={client.id}>
+              <SelectItem key={client.id} value={client.id} className="text-sm">
                 {client.name}
               </SelectItem>
             ))}
@@ -63,32 +59,34 @@ export function Sidebar({ selectedClient, onClientSelect, activeView, onViewChan
 
       {/* View Toggles - Only shown when client is selected */}
       {selectedClient && (
-        <div className="sidebar-section border-b border-sidebar-border animate-fade-in">
-          <label className="sidebar-label">Client View</label>
-          <div className="space-y-2">
-            {viewOptions.map((option) => (
-              <button
-                key={option.id}
-                onClick={() => onViewChange(option.id)}
-                className={`w-full flex items-start gap-3 p-3 rounded-lg text-left transition-colors ${
-                  activeView === option.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-background hover:bg-secondary text-foreground'
-                }`}
-              >
-                <option.icon className={`w-5 h-5 mt-0.5 shrink-0 ${
-                  activeView === option.id ? 'text-primary-foreground' : 'text-primary'
-                }`} />
-                <div>
-                  <p className="font-medium text-sm">{option.label}</p>
-                  <p className={`text-xs ${
-                    activeView === option.id ? 'text-primary-foreground/80' : 'text-muted-foreground'
-                  }`}>
-                    {option.description}
-                  </p>
-                </div>
-              </button>
-            ))}
+        <div className="px-4 pb-6">
+          <p className="sidebar-label">Client View</p>
+          <div className="space-y-1">
+            {viewOptions.map((option) => {
+              const isSelected = activeView === option.id;
+              return (
+                <button
+                  key={option.id}
+                  onClick={() => onViewChange(option.id)}
+                  className={`w-full nav-item transition-fast ${
+                    isSelected ? 'nav-item-selected' : 'nav-item-default'
+                  }`}
+                >
+                  <option.icon 
+                    className="w-[18px] h-[18px] mt-0.5 shrink-0" 
+                    strokeWidth={1.5}
+                  />
+                  <div className="text-left">
+                    <p className={`text-sm ${isSelected ? 'font-medium' : 'font-normal'}`}>
+                      {option.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground nav-item-description">
+                      {option.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -97,9 +95,9 @@ export function Sidebar({ selectedClient, onClientSelect, activeView, onViewChan
       <div className="flex-1" />
 
       {/* Footer */}
-      <div className="sidebar-section border-t border-sidebar-border">
+      <div className="px-4 py-4 border-t border-border">
         <p className="text-xs text-muted-foreground">
-          Fabric v1.0 • Client Portal
+          Fabric v1.0
         </p>
       </div>
     </aside>

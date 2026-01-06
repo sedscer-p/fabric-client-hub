@@ -13,16 +13,10 @@ interface MainPanelProps {
 export function MainPanel({ client, activeView }: MainPanelProps) {
   if (!client) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <div className="text-center max-w-md px-6">
-          <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">👈</span>
-          </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">
+      <div className="flex-1 flex items-center justify-center bg-background min-h-screen">
+        <div className="text-center max-w-sm">
+          <p className="text-muted-foreground text-sm">
             Select a client to get started
-          </h2>
-          <p className="text-muted-foreground">
-            Choose a client from the sidebar to view their documentation, meeting notes, and preparation items.
           </p>
         </div>
       </div>
