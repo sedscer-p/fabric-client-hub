@@ -64,7 +64,7 @@ Client expressed satisfaction with current strategy. Will reconvene in 30 days t
         activeView={activeView}
         onViewChange={setActiveView}
         selectedMeetingType={selectedMeetingType}
-        isRecording={recordingState === 'recording'}
+        recordingState={recordingState}
         isMeetingActive={isMeetingActive}
       />
       <div className="ml-[260px] flex-1">

@@ -1,4 +1,4 @@
-import { FileText, BookOpen, CheckSquare, User, Mic } from 'lucide-react';
+import { FileText, BookOpen, CheckSquare, User, Mic, CheckCircle } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -7,6 +7,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { clients, Client, ViewType, meetingTypes } from '@/data/mockData';
+import { RecordingState } from './RecordingOverlay';
 
 interface SidebarProps {
   selectedClient: Client | null;
@@ -14,7 +15,7 @@ interface SidebarProps {
   activeView: ViewType;
   onViewChange: (view: ViewType) => void;
   selectedMeetingType: string;
-  isRecording: boolean;
+  recordingState: RecordingState;
   isMeetingActive: boolean;
 }
 
@@ -24,7 +25,7 @@ export function Sidebar({
   activeView, 
   onViewChange,
   selectedMeetingType,
-  isRecording,
+  recordingState,
   isMeetingActive
 }: SidebarProps) {
 
@@ -76,7 +77,7 @@ export function Sidebar({
           <div className="space-y-1">
             {viewOptions.map((option) => {
               const isSelected = activeView === option.id;
-              const isRecordingIndicator = option.id === 'start-meeting' && isMeetingActive;
+              const showRecordingDot = option.id === 'start-meeting' && recordingState === 'recording';
               
               return (
                 <button
@@ -91,7 +92,7 @@ export function Sidebar({
                       className="w-[18px] h-[18px] mt-0.5 shrink-0" 
                       strokeWidth={1.5}
                     />
-                    {isRecordingIndicator && (
+                    {showRecordingDot && (
                       <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-destructive animate-pulse" />
                     )}
                   </div>
@@ -110,14 +111,26 @@ export function Sidebar({
         </div>
       )}
 
-      {/* Meeting in Progress indicator */}
+      {/* Meeting status indicator */}
       {selectedClient && isMeetingActive && (
         <div className="px-4 pb-4">
           <div className="card-minimal p-3">
             <div className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+              {recordingState === 'recording' && (
+                <div className="w-2.5 h-2.5 rounded-full bg-destructive animate-pulse" />
+              )}
+              {recordingState === 'processing' && (
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+              )}
+              {recordingState === 'complete' && (
+                <CheckCircle className="w-4 h-4 text-primary" strokeWidth={1.5} />
+              )}
               <div>
-                <p className="text-xs font-medium text-foreground">Recording in progress</p>
+                <p className="text-xs font-medium text-foreground">
+                  {recordingState === 'recording' && 'Recording in progress'}
+                  {recordingState === 'processing' && 'Processing recording...'}
+                  {recordingState === 'complete' && 'Meeting complete'}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {meetingTypes.find(t => t.id === selectedMeetingType)?.label}
                 </p>
