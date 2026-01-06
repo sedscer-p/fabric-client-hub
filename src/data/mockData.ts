@@ -25,6 +25,31 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+export interface ClientDocumentation {
+  riskTolerance: string;
+  financialObjective: string;
+  capacityForLoss: string;
+  investmentHorizon: string;
+}
+
+export interface MeetingNote {
+  id: string;
+  date: string;
+  type: string;
+  summary: string;
+  transcription: string;
+  hasAudio: boolean;
+}
+
+export interface MeetingPrepItem {
+  id: string;
+  text: string;
+  status: 'pending' | 'complete';
+  fromMeetingDate: string;
+}
+
+export type ViewType = 'documentation' | 'meeting-notes' | 'meeting-prep';
+
 export const clients: Client[] = [
   {
     id: '1',
@@ -54,6 +79,105 @@ export const meetingTypes = [
   { id: 'regular', label: 'Regular Review' },
   { id: 'annual', label: 'Annual Review' },
 ];
+
+export const clientDocumentation: Record<string, ClientDocumentation> = {
+  '1': {
+    riskTolerance: 'Moderate - Willing to accept some market fluctuations for potential growth',
+    financialObjective: 'Retirement income generation with capital preservation focus',
+    capacityForLoss: 'Medium - Can withstand 15-20% temporary portfolio decline',
+    investmentHorizon: '10-15 years until retirement, then 25+ year distribution phase',
+  },
+  '2': {
+    riskTolerance: 'Aggressive - Comfortable with significant market volatility',
+    financialObjective: 'Business exit planning and wealth accumulation',
+    capacityForLoss: 'High - Can sustain 30%+ decline without lifestyle impact',
+    investmentHorizon: '5 years to business exit, 30+ years for personal wealth',
+  },
+  '3': {
+    riskTolerance: 'Conservative - Prefers stability over growth potential',
+    financialObjective: 'Education funding and family financial security',
+    capacityForLoss: 'Low - Requires stable portfolio value for near-term goals',
+    investmentHorizon: '8 years for education goals, 25 years for retirement',
+  },
+};
+
+export const meetingNotes: Record<string, MeetingNote[]> = {
+  '1': [
+    {
+      id: '1',
+      date: '2024-12-15',
+      type: 'Regular Review',
+      summary: 'Discussed retirement timeline, portfolio reallocation to bonds, and estate planning updates needed after property purchase.',
+      transcription: 'Full transcription available. Topics covered: retirement age confirmation at 62, bond allocation increase by 10%, estate document updates, ESG investment interest.',
+      hasAudio: true,
+    },
+    {
+      id: '2',
+      date: '2024-09-20',
+      type: 'Annual Review',
+      summary: 'Comprehensive annual review covering all financial goals, risk assessment, and investment performance.',
+      transcription: 'Full transcription available. Annual comprehensive review of portfolio performance, goal progress, and strategic planning.',
+      hasAudio: true,
+    },
+  ],
+  '2': [
+    {
+      id: '1',
+      date: '2024-12-10',
+      type: 'Regular Review',
+      summary: 'Business succession planning and cash reserve analysis. Tax-loss harvesting opportunities identified.',
+      transcription: 'Full transcription available. Discussion of 5-year exit timeline, 18-month cash reserves, and growth portfolio optimization.',
+      hasAudio: true,
+    },
+  ],
+  '3': [
+    {
+      id: '1',
+      date: '2024-11-28',
+      type: 'Regular Review',
+      summary: 'College funding review, life insurance adequacy, and home refinancing discussion.',
+      transcription: 'Full transcription available. 529 contributions on track, insurance adequate, refinancing options to explore.',
+      hasAudio: false,
+    },
+  ],
+};
+
+export const meetingPrepItems: Record<string, MeetingPrepItem[]> = {
+  '1': [
+    { id: '1', text: 'Follow up on updated beneficiary information for retirement accounts', status: 'pending', fromMeetingDate: '2024-12-15' },
+    { id: '2', text: 'Check if estate planning documents have been signed', status: 'pending', fromMeetingDate: '2024-12-15' },
+    { id: '3', text: 'Review ESG investment options presentation with client', status: 'pending', fromMeetingDate: '2024-12-15' },
+    { id: '4', text: 'Confirm bond allocation rebalancing has been executed', status: 'complete', fromMeetingDate: '2024-12-15' },
+  ],
+  '2': [
+    { id: '1', text: 'Request business valuation report from accountant', status: 'pending', fromMeetingDate: '2024-12-10' },
+    { id: '2', text: 'Review succession planning roadmap draft', status: 'pending', fromMeetingDate: '2024-12-10' },
+    { id: '3', text: 'Execute identified tax-loss harvesting trades', status: 'complete', fromMeetingDate: '2024-12-10' },
+  ],
+  '3': [
+    { id: '1', text: 'Collect mortgage statements for refinance analysis', status: 'pending', fromMeetingDate: '2024-11-28' },
+    { id: '2', text: 'Present 529 contribution increase proposal', status: 'pending', fromMeetingDate: '2024-11-28' },
+    { id: '3', text: 'Update financial plan with new home value', status: 'complete', fromMeetingDate: '2024-11-28' },
+  ],
+};
+
+export const overallTrends: Record<string, string[]> = {
+  '1': [
+    'Consistent focus on retirement readiness across all meetings',
+    'Increasing interest in sustainable/ESG investing',
+    'Estate planning becoming higher priority after property purchase',
+  ],
+  '2': [
+    'Primary focus on business succession planning',
+    'Strong cash position maintained throughout',
+    'Tax optimization remains key concern',
+  ],
+  '3': [
+    'Education funding is top priority',
+    'Conservative approach to investment risk',
+    'Recent focus on debt optimization through refinancing',
+  ],
+};
 
 export const summaryPoints: Record<string, SummaryPoint[]> = {
   '1': [

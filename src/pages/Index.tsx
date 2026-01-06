@@ -1,19 +1,22 @@
 import { useState } from 'react';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { MainPanel } from '@/components/dashboard/MainPanel';
-import { Client } from '@/data/mockData';
+import { Client, ViewType } from '@/data/mockData';
 
 const Index = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [activeView, setActiveView] = useState<ViewType>('documentation');
 
   return (
     <div className="flex min-h-screen w-full">
       <Sidebar 
         selectedClient={selectedClient} 
-        onClientSelect={setSelectedClient} 
+        onClientSelect={setSelectedClient}
+        activeView={activeView}
+        onViewChange={setActiveView}
       />
       <div className="ml-[280px] flex-1">
-        <MainPanel client={selectedClient} />
+        <MainPanel client={selectedClient} activeView={activeView} />
       </div>
     </div>
   );
