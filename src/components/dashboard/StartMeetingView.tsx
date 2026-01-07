@@ -27,7 +27,7 @@ export function StartMeetingView({
   const canRecord = selectedMeetingType && hasConsent;
 
   return (
-    <div className="main-content">
+    <div className="px-12 pt-12 pb-12 max-w-[800px]">
       <div className="content-card max-w-lg mx-auto mt-12">
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
@@ -73,8 +73,8 @@ export function StartMeetingView({
               onCheckedChange={(checked) => setHasConsent(checked === true)}
               className="mt-0.5 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
             />
-            <label 
-              htmlFor="consent" 
+            <label
+              htmlFor="consent"
               className="text-sm text-foreground leading-relaxed cursor-pointer"
             >
               I confirm that the client has consented to being recorded
@@ -84,18 +84,18 @@ export function StartMeetingView({
           {/* Checklist */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
-              <CheckCircle 
-                className={`w-4 h-4 ${selectedMeetingType ? 'text-primary' : 'text-muted-foreground/50'}`} 
-                strokeWidth={1.5} 
+              <CheckCircle
+                className={`w-4 h-4 ${selectedMeetingType ? 'text-primary' : 'text-muted-foreground/50'}`}
+                strokeWidth={1.5}
               />
               <span className={selectedMeetingType ? 'text-foreground' : 'text-muted-foreground'}>
                 Meeting type selected
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <CheckCircle 
-                className={`w-4 h-4 ${hasConsent ? 'text-primary' : 'text-muted-foreground/50'}`} 
-                strokeWidth={1.5} 
+              <CheckCircle
+                className={`w-4 h-4 ${hasConsent ? 'text-primary' : 'text-muted-foreground/50'}`}
+                strokeWidth={1.5}
               />
               <span className={hasConsent ? 'text-foreground' : 'text-muted-foreground'}>
                 Consent confirmed
@@ -104,7 +104,7 @@ export function StartMeetingView({
           </div>
 
           {/* Record Meeting Button */}
-          <Button 
+          <Button
             onClick={onStartRecording}
             disabled={!canRecord}
             size="lg"

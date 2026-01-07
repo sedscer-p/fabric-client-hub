@@ -23,6 +23,12 @@ interface MainPanelProps {
   meetingId?: string;
   meetingDate?: string;
   transcription?: string;
+  summaryAccepted: boolean;
+  onSummaryAcceptedChange: (accepted: boolean) => void;
+  generatedDoc: string | null;
+  onGeneratedDocChange: (doc: string | null) => void;
+  selectedDocType: string;
+  onSelectedDocTypeChange: (type: string) => void;
 }
 
 export function MainPanel({
@@ -41,7 +47,13 @@ export function MainPanel({
   clientMeetingNotes,
   meetingId,
   meetingDate,
-  transcription
+  transcription,
+  summaryAccepted,
+  onSummaryAcceptedChange,
+  generatedDoc,
+  onGeneratedDocChange,
+  selectedDocType,
+  onSelectedDocTypeChange
 }: MainPanelProps) {
   const isMeetingActive = recordingState !== 'idle';
 
@@ -81,25 +93,29 @@ export function MainPanel({
           />
         )}
         {activeView === 'start-meeting' && isMeetingActive && (
-          <div className="main-content">
-            <RecordingOverlay
-              state={recordingState}
-              meetingType={meetingType}
-              meetingTypeId={selectedMeetingType}
-              onStopRecording={onStopRecording}
-              onAcceptSummary={onAcceptSummary}
-              onGenerateDiscoveryReport={onGenerateDiscoveryReport}
-              onSkipReport={onSkipReport}
-              meetingSummary={meetingSummary}
-              clientId={client.id}
-              clientName={client.name}
-              clientEmail={client.email}
-              advisorName={client.advisor}
-              meetingId={meetingId}
-              meetingDate={meetingDate}
-              transcription={transcription}
-            />
-          </div>
+          <RecordingOverlay
+            state={recordingState}
+            meetingType={meetingType}
+            meetingTypeId={selectedMeetingType}
+            onStopRecording={onStopRecording}
+            onAcceptSummary={onAcceptSummary}
+            onGenerateDiscoveryReport={onGenerateDiscoveryReport}
+            onSkipReport={onSkipReport}
+            meetingSummary={meetingSummary}
+            clientId={client.id}
+            clientName={client.name}
+            clientEmail={client.email}
+            advisorName={client.advisor}
+            meetingId={meetingId}
+            meetingDate={meetingDate}
+            transcription={transcription}
+            summaryAccepted={summaryAccepted}
+            onSummaryAcceptedChange={onSummaryAcceptedChange}
+            generatedDoc={generatedDoc}
+            onGeneratedDocChange={onGeneratedDocChange}
+            selectedDocType={selectedDocType}
+            onSelectedDocTypeChange={onSelectedDocTypeChange}
+          />
         )}
       </div>
     </div>

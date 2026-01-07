@@ -18,6 +18,9 @@ const Index = () => {
   const [clientActions, setClientActions] = useState<ActionItem[]>([]);
   const [advisorActions, setAdvisorActions] = useState<ActionItem[]>([]);
   const [meetingDate, setMeetingDate] = useState<string>('');
+  const [summaryAccepted, setSummaryAccepted] = useState(false);
+  const [generatedDoc, setGeneratedDoc] = useState<string | null>(null);
+  const [selectedDocType, setSelectedDocType] = useState('discovery_document');
 
   // Load existing meetings on component mount
   useEffect(() => {
@@ -38,6 +41,8 @@ const Index = () => {
   const handleStartRecording = () => {
     setRecordingState('recording');
     setMeetingSummary('');
+    setSummaryAccepted(false);
+    setGeneratedDoc(null);
   };
 
   const handleStopRecording = async () => {
@@ -82,6 +87,8 @@ const Index = () => {
       console.error('Failed to process meeting:', error);
       setProcessingError(error.message || 'Failed to process meeting');
       setRecordingState('idle');
+      setSummaryAccepted(false);
+      setGeneratedDoc(null);
       // TODO: Show error toast notification
     }
   };
@@ -131,6 +138,10 @@ const Index = () => {
         setMeetingId('');
         setSelectedMeetingType('');
         setActiveView('meeting-notes');
+        setSummaryAccepted(false);
+        setGeneratedDoc(null);
+      } else {
+        setSummaryAccepted(true);
       }
       // For discovery meetings, keep state and show report option
     } catch (error: any) {
@@ -185,6 +196,8 @@ const Index = () => {
     setTranscription('');
     setMeetingId('');
     setSelectedMeetingType('');
+    setSummaryAccepted(false);
+    setGeneratedDoc(null);
     setActiveView('meeting-notes');
   };
 
@@ -194,6 +207,8 @@ const Index = () => {
       setRecordingState('idle');
       setMeetingSummary('');
       setSelectedMeetingType('');
+      setSummaryAccepted(false);
+      setGeneratedDoc(null);
     }
     setSelectedClient(client);
     setActiveView('meeting-notes');
@@ -234,6 +249,12 @@ const Index = () => {
           meetingId={meetingId}
           meetingDate={meetingDate}
           transcription={transcription}
+          summaryAccepted={summaryAccepted}
+          onSummaryAcceptedChange={setSummaryAccepted}
+          generatedDoc={generatedDoc}
+          onGeneratedDocChange={setGeneratedDoc}
+          selectedDocType={selectedDocType}
+          onSelectedDocTypeChange={setSelectedDocType}
         />
       </div>
     </div>

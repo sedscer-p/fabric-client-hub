@@ -33,6 +33,12 @@ interface RecordingOverlayProps {
   meetingId?: string;
   meetingDate?: string;
   transcription?: string;
+  summaryAccepted: boolean;
+  onSummaryAcceptedChange: (accepted: boolean) => void;
+  generatedDoc: string | null;
+  onGeneratedDocChange: (doc: string | null) => void;
+  selectedDocType: string;
+  onSelectedDocTypeChange: (type: string) => void;
 }
 
 const discoveryReportSections = [
@@ -57,17 +63,20 @@ export function RecordingOverlay({
   advisorName,
   meetingId,
   meetingDate,
-  transcription
+  transcription,
+  summaryAccepted,
+  onSummaryAcceptedChange,
+  generatedDoc,
+  onGeneratedDocChange,
+  selectedDocType,
+  onSelectedDocTypeChange
 }: RecordingOverlayProps) {
   const [elapsed, setElapsed] = useState(0);
-  const [summaryAccepted, setSummaryAccepted] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState('s.edscer@gmail.com');
   const [includeTranscription, setIncludeTranscription] = useState(false);
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
-  const [generatedDoc, setGeneratedDoc] = useState<string | null>(null);
-  const [selectedDocType, setSelectedDocType] = useState('discovery_document');
 
   // Hardcoded document types for now (could be fetched from API later)
   const documentTypes = [
@@ -81,7 +90,7 @@ export function RecordingOverlay({
     }
 
     setIsGeneratingDoc(true);
-    setGeneratedDoc(null);
+    onGeneratedDocChange(null);
 
     try {
       const response = await generateDocument({
@@ -93,7 +102,7 @@ export function RecordingOverlay({
         meetingType: meetingType
       });
 
-      setGeneratedDoc(response.document);
+      onGeneratedDocChange(response.document);
       toast.success('Document generated successfully');
     } catch (error: any) {
       toast.error(error.message || 'Failed to generate document');
@@ -120,8 +129,8 @@ export function RecordingOverlay({
 
   // Reset accepted state when recording state changes
   useEffect(() => {
-    if (state !== 'complete') {
-      setSummaryAccepted(false);
+    if (state !== 'complete' && state !== 'idle') {
+      onSummaryAcceptedChange(false);
     }
   }, [state]);
 
@@ -138,7 +147,7 @@ export function RecordingOverlay({
 
     if (isDiscoveryMeeting) {
       // For discovery meetings, transition to the document generation view
-      setSummaryAccepted(true);
+      onSummaryAcceptedChange(true);
     } else {
       // For other meetings, we are done
       handleSkipReport();
@@ -175,7 +184,7 @@ export function RecordingOverlay({
   const handleReject = () => {
     // If we have a generated doc, just clear it
     if (generatedDoc) {
-      setGeneratedDoc(null);
+      onGeneratedDocChange(null);
       toast.info('Document generation cancelled');
     } else {
       // If we are rejecting the summary, go back to idle or skip
@@ -232,27 +241,29 @@ export function RecordingOverlay({
 
   if (state === 'recording') {
     return (
-      <div className="card-minimal p-6 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-              <div className="w-3 h-3 rounded-full bg-destructive animate-pulse" />
+      <div className="px-12 pt-12 pb-12 max-w-[800px]">
+        <div className="card-minimal p-8 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <div className="w-3 h-3 rounded-full bg-destructive animate-pulse" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">Recording in Progress</p>
+                <p className="text-xs text-muted-foreground">
+                  {meetingType} • {formatTime(elapsed)}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">Recording in Progress</p>
-              <p className="text-xs text-muted-foreground">
-                {meetingType} • {formatTime(elapsed)}
-              </p>
-            </div>
+            <Button
+              onClick={onStopRecording}
+              variant="outline"
+              className="h-10 px-4 border-border hover:bg-muted"
+            >
+              <Square className="w-4 h-4 mr-2 fill-current" strokeWidth={1.5} />
+              End Recording
+            </Button>
           </div>
-          <Button
-            onClick={onStopRecording}
-            variant="outline"
-            className="h-10 px-4 border-border hover:bg-muted"
-          >
-            <Square className="w-4 h-4 mr-2 fill-current" strokeWidth={1.5} />
-            End Recording
-          </Button>
         </div>
       </div>
     );
@@ -260,16 +271,18 @@ export function RecordingOverlay({
 
   if (state === 'processing') {
     return (
-      <div className="card-minimal p-6 mb-6">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-accent-subtle flex items-center justify-center">
-            <Loader2 className="w-5 h-5 text-primary animate-spin" strokeWidth={1.5} />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-foreground">Processing Recording</p>
-            <p className="text-xs text-muted-foreground">
-              Transcribing and generating meeting summary...
-            </p>
+      <div className="px-12 pt-12 pb-12 max-w-[800px]">
+        <div className="card-minimal p-8 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-accent-subtle flex items-center justify-center">
+              <Loader2 className="w-5 h-5 text-primary animate-spin" strokeWidth={1.5} />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Processing Recording</p>
+              <p className="text-xs text-muted-foreground">
+                Transcribing and generating meeting summary...
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -280,7 +293,7 @@ export function RecordingOverlay({
     // Step 1: Show summary and accept button
     if (!summaryAccepted) {
       return (
-        <div className="space-y-6">
+        <div className="px-12 pt-12 pb-12 max-w-[800px] space-y-8">
           <div className="flex items-center justify-between mb-2">
             <div>
               <p className="section-header mb-0">Meeting Summary</p>
@@ -323,10 +336,12 @@ export function RecordingOverlay({
             </div>
           </div>
 
-          <div className="card-minimal p-6 border-primary/10">
+          <div className="card-minimal p-10 border-primary/10 shadow-sm">
             <div className="prose prose-sm max-w-none">
-              <div className="text-sm text-foreground whitespace-pre-line leading-relaxed">
-                {meetingSummary}
+              <div className="text-sm text-foreground/90 leading-relaxed space-y-4">
+                {meetingSummary.split('\n').filter(p => p.trim()).map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
               </div>
             </div>
           </div>
@@ -385,7 +400,7 @@ export function RecordingOverlay({
     // Step 2: Discovery Report option (only for discovery meetings)
     if (summaryAccepted && isDiscoveryMeeting) {
       return (
-        <div className="space-y-6">
+        <div className="px-12 pt-12 pb-12 max-w-[800px] space-y-8">
           {/* Summary accepted confirmation */}
           <div className="card-minimal p-4 bg-primary/5 border-primary/20">
             <div className="flex items-center gap-3">
@@ -416,7 +431,7 @@ export function RecordingOverlay({
                 <select
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={selectedDocType}
-                  onChange={(e) => setSelectedDocType(e.target.value)}
+                  onChange={(e) => onSelectedDocTypeChange(e.target.value)}
                 >
                   {documentTypes.map(type => (
                     <option key={type.id} value={type.id}>{type.name}</option>
@@ -446,7 +461,7 @@ export function RecordingOverlay({
                     <div className="flex items-center gap-2">
                       <Button
                         onClick={() => {
-                          setGeneratedDoc(null);
+                          onGeneratedDocChange(null);
                           toast.info('Document rejected');
                         }}
                         variant="ghost"
@@ -478,14 +493,18 @@ export function RecordingOverlay({
                       </Button>
                     </div>
                   </div>
-                  <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 max-h-[400px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed font-semibold">
-                      {generatedDoc.split(/(\*\*.*?\*\*)/).map((part, i) => {
-                        if (part.startsWith('**') && part.endsWith('**')) {
-                          return <strong key={i} className="font-bold underline text-primary">{part.slice(2, -2)}</strong>;
-                        }
-                        return part;
-                      })}
+                  <div className="p-10 rounded-xl border border-primary/20 bg-primary/5 max-h-[600px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-300 shadow-inner">
+                    <div className="text-sm text-foreground/90 leading-relaxed font-normal space-y-4">
+                      {generatedDoc.split('\n').filter(p => p.trim()).map((para, i) => (
+                        <p key={i}>
+                          {para.split(/(\*\*.*?\*\*)/).map((part, j) => {
+                            if (part.startsWith('**') && part.endsWith('**')) {
+                              return <strong key={j} className="font-bold text-primary">{part.slice(2, -2)}</strong>;
+                            }
+                            return part;
+                          })}
+                        </p>
+                      ))}
                     </div>
                   </div>
                 </div>

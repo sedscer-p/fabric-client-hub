@@ -277,10 +277,10 @@ export async function getMeetingNotes(clientId: string): Promise<MeetingNote[]> 
         for (const file of reportFiles) {
           if (file.endsWith('.txt')) {
             const content = await fs.readFile(path.join(reportsPath, file), 'utf-8');
-            // Use filename (without extension) as type, converting slugs back to title case-ish
+            // Use filename (without extension) as type, converting slugs/snake_case back to title case
             const type = file
               .replace('.txt', '')
-              .split('-')
+              .split(/[_-]/)
               .map(word => word.charAt(0).toUpperCase() + word.slice(1))
               .join(' ');
 
