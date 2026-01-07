@@ -1,11 +1,10 @@
-import { Client, ViewType } from '@/data/mockData';
+import { Client, ViewType, MeetingNote } from '@/data/mockData';
 import { ClientHeader } from './ClientHeader';
 import { DocumentationView } from './DocumentationView';
 import { MeetingNotesView } from './MeetingNotesView';
 import { MeetingPrepView } from './MeetingPrepView';
 import { StartMeetingView } from './StartMeetingView';
 import { RecordingOverlay, RecordingState } from './RecordingOverlay';
-import { AskBar } from './AskBar';
 
 interface MainPanelProps {
   client: Client | null;
@@ -18,19 +17,21 @@ interface MainPanelProps {
   onStopRecording: () => void;
   onAcceptSummary: (selectedDocuments: string[]) => void;
   meetingSummary: string;
+  clientMeetingNotes: Record<string, MeetingNote[]>;
 }
 
-export function MainPanel({ 
-  client, 
-  activeView, 
-  recordingState, 
+export function MainPanel({
+  client,
+  activeView,
+  recordingState,
   meetingType,
   selectedMeetingType,
   onMeetingTypeChange,
   onStartRecording,
   onStopRecording,
   onAcceptSummary,
-  meetingSummary
+  meetingSummary,
+  clientMeetingNotes
 }: MainPanelProps) {
   const isMeetingActive = recordingState !== 'idle';
 
@@ -49,13 +50,10 @@ export function MainPanel({
   return (
     <div className="flex-1 flex flex-col bg-background min-h-screen">
       <ClientHeader client={client} />
-      
-      {/* Ask Bar - Always accessible */}
-      <AskBar clientId={client.id} />
-      
+
       <div className="flex-1 overflow-auto">
         {activeView === 'documentation' && <DocumentationView clientId={client.id} />}
-        {activeView === 'meeting-notes' && <MeetingNotesView clientId={client.id} />}
+        {activeView === 'meeting-notes' && <MeetingNotesView clientId={client.id} meetingNotes={clientMeetingNotes[client.id] || []} />}
         {activeView === 'meeting-prep' && <MeetingPrepView clientId={client.id} />}
         {activeView === 'start-meeting' && !isMeetingActive && (
           <StartMeetingView
@@ -66,7 +64,7 @@ export function MainPanel({
         )}
         {activeView === 'start-meeting' && isMeetingActive && (
           <div className="main-content">
-            <RecordingOverlay 
+            <RecordingOverlay
               state={recordingState}
               meetingType={meetingType}
               meetingTypeId={selectedMeetingType}

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { MainPanel } from '@/components/dashboard/MainPanel';
-import { Client, ViewType, meetingTypes } from '@/data/mockData';
+import { Client, ViewType, meetingTypes, MeetingNote } from '@/data/mockData';
 import { RecordingState } from '@/components/dashboard/RecordingOverlay';
+import { processMeeting, saveMeetingNote, generateDiscoveryReport } from '@/services/api';
 
 const Index = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -10,42 +11,98 @@ const Index = () => {
   const [selectedMeetingType, setSelectedMeetingType] = useState<string>('');
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [meetingSummary, setMeetingSummary] = useState<string>('');
+  const [transcription, setTranscription] = useState<string>('');
+  const [meetingId, setMeetingId] = useState<string>('');
+  const [processingError, setProcessingError] = useState<string | null>(null);
+  const [clientMeetingNotes, setClientMeetingNotes] = useState<Record<string, MeetingNote[]>>({});
 
   const handleStartRecording = () => {
     setRecordingState('recording');
     setMeetingSummary('');
   };
 
-  const handleStopRecording = () => {
+  const handleStopRecording = async () => {
+    if (!selectedClient) return;
+
     setRecordingState('processing');
-    setTimeout(() => {
+    setProcessingError(null);
+
+    try {
+      // Call backend API to process meeting and generate summary
+      const result = await processMeeting({
+        clientId: selectedClient.id,
+        meetingType: selectedMeetingType,
+        duration: 180, // Recording duration in seconds (mock value)
+      });
+
+      // Store results in state
+      setMeetingSummary(result.summary);
+      setTranscription(result.transcription);
+      setMeetingId(result.meetingId);
       setRecordingState('complete');
-      setMeetingSummary(`Meeting Summary - ${meetingTypes.find(t => t.id === selectedMeetingType)?.label || 'Meeting'}
-
-Key Discussion Points:
-• Reviewed current portfolio allocation and performance metrics
-• Discussed upcoming market conditions and potential adjustments
-• Addressed client questions regarding retirement timeline
-• Reviewed beneficiary designations and estate planning updates
-
-Action Items:
-• Schedule follow-up call to discuss proposed rebalancing strategy
-• Send updated risk tolerance questionnaire for client review
-• Prepare comparative analysis of alternative investment options
-• Update client file with new contact information
-
-Next Steps:
-Client expressed satisfaction with current strategy. Will reconvene in 30 days to finalize any portfolio adjustments based on Q1 performance data.`);
-    }, 3000);
+    } catch (error: any) {
+      console.error('Failed to process meeting:', error);
+      setProcessingError(error.message || 'Failed to process meeting');
+      setRecordingState('idle');
+      // TODO: Show error toast notification
+    }
   };
 
-  const handleAcceptSummary = (selectedDocuments: string[]) => {
-    console.log('Summary accepted with documents:', selectedDocuments);
-    // Reset meeting state
-    setRecordingState('idle');
-    setMeetingSummary('');
-    setSelectedMeetingType('');
-    setActiveView('documentation');
+  const handleAcceptSummary = async (selectedDocuments: string[]) => {
+    if (!selectedClient || !meetingId) return;
+
+    const shouldGenerateReport = selectedDocuments.includes('discovery-report');
+
+    try {
+      const meetingTypeLabel = meetingTypes.find(t => t.id === selectedMeetingType)?.label || selectedMeetingType;
+      const newMeetingNote: MeetingNote = {
+        id: meetingId,
+        date: new Date().toISOString(),
+        type: meetingTypeLabel,
+        summary: meetingSummary,
+        transcription: transcription,
+        hasAudio: true,
+      };
+
+      // Add to local state immediately
+      setClientMeetingNotes(prev => ({
+        ...prev,
+        [selectedClient.id]: [newMeetingNote, ...(prev[selectedClient.id] || [])]
+      }));
+
+      // Save meeting note to backend
+      await saveMeetingNote({
+        clientId: selectedClient.id,
+        meetingId: meetingId,
+        meetingType: selectedMeetingType,
+        summary: meetingSummary,
+        transcription: transcription,
+        date: newMeetingNote.date,
+        hasAudio: true,
+      });
+
+      // Generate discovery report if requested
+      if (shouldGenerateReport && selectedMeetingType === 'discovery') {
+        await generateDiscoveryReport({
+          clientId: selectedClient.id,
+          meetingId: meetingId,
+          transcription: transcription,
+        });
+        console.log('Discovery report generated successfully');
+        // TODO: Navigate to discovery report view or show success message
+      }
+
+      // Reset state and navigate to meeting-notes view
+      setRecordingState('idle');
+      setMeetingSummary('');
+      setTranscription('');
+      setMeetingId('');
+      setSelectedMeetingType('');
+      setActiveView('meeting-notes');
+    } catch (error: any) {
+      console.error('Failed to save meeting:', error);
+      // TODO: Show error toast notification
+    }
   };
 
   const handleClientSelect = (client: Client | null) => {
@@ -77,8 +134,8 @@ Client expressed satisfaction with current strategy. Will reconvene in 30 days t
         isMeetingActive={isMeetingActive}
       />
       <div className="ml-[260px] flex-1">
-        <MainPanel 
-          client={selectedClient} 
+        <MainPanel
+          client={selectedClient}
           activeView={activeView}
           recordingState={recordingState}
           meetingType={getMeetingTypeLabel()}
@@ -88,6 +145,7 @@ Client expressed satisfaction with current strategy. Will reconvene in 30 days t
           onStopRecording={handleStopRecording}
           onAcceptSummary={handleAcceptSummary}
           meetingSummary={meetingSummary}
+          clientMeetingNotes={clientMeetingNotes}
         />
       </div>
     </div>
