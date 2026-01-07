@@ -15,7 +15,7 @@ import {
   MeetingNote,
 } from '../types/index.js';
 import { generateSummary, generateDiscoveryReport } from '../services/anthropic.js';
-import { saveMeetingNote } from '../services/database.js';
+import { saveMeetingNote, saveDiscoveryReport } from '../services/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -113,8 +113,8 @@ router.post('/save', async (req: Request, res: Response) => {
       hasAudio: hasAudio ?? true,
     };
 
-    // Save to database
-    const savedNote = saveMeetingNote(clientId, meetingNote);
+    // Save to database with transcription
+    const savedNote = await saveMeetingNote(clientId, meetingNote, transcription);
 
     const response: SaveMeetingResponse = {
       success: true,
@@ -140,13 +140,19 @@ router.post('/save', async (req: Request, res: Response) => {
  */
 router.post('/discovery-report', async (req: Request, res: Response) => {
   try {
-    const { clientId, meetingId, transcription }: DiscoveryReportRequest = req.body;
+    const {
+      clientId,
+      meetingId,
+      transcription,
+      meetingDate,
+      meetingType,
+    }: DiscoveryReportRequest & { meetingDate: string; meetingType: string } = req.body;
 
     // Validate request
-    if (!clientId || !meetingId || !transcription) {
+    if (!clientId || !meetingId || !transcription || !meetingDate || !meetingType) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'Missing required fields: clientId, meetingId, and transcription',
+        message: 'Missing required fields: clientId, meetingId, transcription, meetingDate, and meetingType',
       });
     }
 
@@ -155,12 +161,15 @@ router.post('/discovery-report', async (req: Request, res: Response) => {
     // Generate discovery report using Claude
     const report = await generateDiscoveryReport(transcription);
 
+    // Save discovery report to data folder
+    await saveDiscoveryReport(clientId, meetingId, meetingDate, meetingType, report);
+
     const response: DiscoveryReportResponse = {
       success: true,
       report,
     };
 
-    console.log(`Discovery report generated successfully`);
+    console.log(`Discovery report generated and saved successfully`);
 
     res.json(response);
   } catch (error: any) {

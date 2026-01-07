@@ -40,6 +40,8 @@ export interface DiscoveryReportRequest {
   clientId: string;
   meetingId: string;
   transcription: string;
+  meetingDate: string;
+  meetingType: string;
 }
 
 export interface DiscoveryReportResponse {

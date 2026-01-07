@@ -48,10 +48,8 @@ const Index = () => {
     }
   };
 
-  const handleAcceptSummary = async (selectedDocuments: string[]) => {
+  const handleAcceptSummary = async () => {
     if (!selectedClient || !meetingId) return;
-
-    const shouldGenerateReport = selectedDocuments.includes('discovery-report');
 
     try {
       const meetingTypeLabel = meetingTypes.find(t => t.id === selectedMeetingType)?.label || selectedMeetingType;
@@ -81,16 +79,41 @@ const Index = () => {
         hasAudio: true,
       });
 
-      // Generate discovery report if requested
-      if (shouldGenerateReport && selectedMeetingType === 'discovery') {
-        await generateDiscoveryReport({
-          clientId: selectedClient.id,
-          meetingId: meetingId,
-          transcription: transcription,
-        });
-        console.log('Discovery report generated successfully');
-        // TODO: Navigate to discovery report view or show success message
+      console.log('Meeting note saved successfully');
+
+      // If not a discovery meeting, reset and navigate
+      if (selectedMeetingType !== 'discovery') {
+        setRecordingState('idle');
+        setMeetingSummary('');
+        setTranscription('');
+        setMeetingId('');
+        setSelectedMeetingType('');
+        setActiveView('meeting-notes');
       }
+      // For discovery meetings, keep state and show report option
+    } catch (error: any) {
+      console.error('Failed to save meeting:', error);
+      // TODO: Show error toast notification
+    }
+  };
+
+  const handleGenerateDiscoveryReport = async () => {
+    if (!selectedClient || !meetingId) return;
+
+    try {
+      const meetingTypeLabel = meetingTypes.find(t => t.id === selectedMeetingType)?.label || selectedMeetingType;
+      const meetingDate = clientMeetingNotes[selectedClient.id]?.[0]?.date || new Date().toISOString();
+
+      await generateDiscoveryReport({
+        clientId: selectedClient.id,
+        meetingId: meetingId,
+        transcription: transcription,
+        meetingDate: meetingDate,
+        meetingType: meetingTypeLabel,
+      });
+
+      console.log('Discovery report generated successfully');
+      // TODO: Navigate to discovery report view or show success message
 
       // Reset state and navigate to meeting-notes view
       setRecordingState('idle');
@@ -100,9 +123,19 @@ const Index = () => {
       setSelectedMeetingType('');
       setActiveView('meeting-notes');
     } catch (error: any) {
-      console.error('Failed to save meeting:', error);
+      console.error('Failed to generate discovery report:', error);
       // TODO: Show error toast notification
     }
+  };
+
+  const handleSkipReport = () => {
+    // Meeting already saved, just reset state and navigate
+    setRecordingState('idle');
+    setMeetingSummary('');
+    setTranscription('');
+    setMeetingId('');
+    setSelectedMeetingType('');
+    setActiveView('meeting-notes');
   };
 
   const handleClientSelect = (client: Client | null) => {
@@ -144,6 +177,8 @@ const Index = () => {
           onStartRecording={handleStartRecording}
           onStopRecording={handleStopRecording}
           onAcceptSummary={handleAcceptSummary}
+          onGenerateDiscoveryReport={handleGenerateDiscoveryReport}
+          onSkipReport={handleSkipReport}
           meetingSummary={meetingSummary}
           clientMeetingNotes={clientMeetingNotes}
         />

@@ -15,7 +15,9 @@ interface MainPanelProps {
   onMeetingTypeChange: (type: string) => void;
   onStartRecording: () => void;
   onStopRecording: () => void;
-  onAcceptSummary: (selectedDocuments: string[]) => void;
+  onAcceptSummary: () => void;
+  onGenerateDiscoveryReport?: () => void;
+  onSkipReport?: () => void;
   meetingSummary: string;
   clientMeetingNotes: Record<string, MeetingNote[]>;
 }
@@ -30,6 +32,8 @@ export function MainPanel({
   onStartRecording,
   onStopRecording,
   onAcceptSummary,
+  onGenerateDiscoveryReport,
+  onSkipReport,
   meetingSummary,
   clientMeetingNotes
 }: MainPanelProps) {
@@ -70,6 +74,8 @@ export function MainPanel({
               meetingTypeId={selectedMeetingType}
               onStopRecording={onStopRecording}
               onAcceptSummary={onAcceptSummary}
+              onGenerateDiscoveryReport={onGenerateDiscoveryReport}
+              onSkipReport={onSkipReport}
               meetingSummary={meetingSummary}
             />
           </div>
