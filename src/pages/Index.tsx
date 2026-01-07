@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { MainPanel } from '@/components/dashboard/MainPanel';
 import { Client, ViewType, meetingTypes, MeetingNote } from '@/data/mockData';
 import { RecordingState } from '@/components/dashboard/RecordingOverlay';
-import { processMeeting, saveMeetingNote, generateDiscoveryReport } from '@/services/api';
+import { processMeeting, saveMeetingNote, generateDiscoveryReport, getAllMeetings } from '@/services/api';
 
 const Index = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [activeView, setActiveView] = useState<ViewType>('documentation');
+  const [activeView, setActiveView] = useState<ViewType>('meeting-notes');
   const [selectedMeetingType, setSelectedMeetingType] = useState<string>('');
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [meetingSummary, setMeetingSummary] = useState<string>('');
@@ -15,6 +15,22 @@ const Index = () => {
   const [meetingId, setMeetingId] = useState<string>('');
   const [processingError, setProcessingError] = useState<string | null>(null);
   const [clientMeetingNotes, setClientMeetingNotes] = useState<Record<string, MeetingNote[]>>({});
+
+  // Load existing meetings on component mount
+  useEffect(() => {
+    const loadMeetings = async () => {
+      try {
+        const response = await getAllMeetings();
+        setClientMeetingNotes(response.meetingNotes);
+        console.log('Loaded existing meetings from data folder');
+      } catch (error) {
+        console.error('Failed to load meetings:', error);
+        // Fail silently - meetings will be empty
+      }
+    };
+
+    loadMeetings();
+  }, []);
 
   const handleStartRecording = () => {
     setRecordingState('recording');
@@ -48,10 +64,8 @@ const Index = () => {
     }
   };
 
-  const handleAcceptSummary = async (selectedDocuments: string[]) => {
+  const handleAcceptSummary = async () => {
     if (!selectedClient || !meetingId) return;
-
-    const shouldGenerateReport = selectedDocuments.includes('discovery-report');
 
     try {
       const meetingTypeLabel = meetingTypes.find(t => t.id === selectedMeetingType)?.label || selectedMeetingType;
@@ -74,23 +88,48 @@ const Index = () => {
       await saveMeetingNote({
         clientId: selectedClient.id,
         meetingId: meetingId,
-        meetingType: selectedMeetingType,
+        meetingType: meetingTypeLabel,
         summary: meetingSummary,
         transcription: transcription,
         date: newMeetingNote.date,
         hasAudio: true,
       });
 
-      // Generate discovery report if requested
-      if (shouldGenerateReport && selectedMeetingType === 'discovery') {
-        await generateDiscoveryReport({
-          clientId: selectedClient.id,
-          meetingId: meetingId,
-          transcription: transcription,
-        });
-        console.log('Discovery report generated successfully');
-        // TODO: Navigate to discovery report view or show success message
+      console.log('Meeting note saved successfully');
+
+      // If not a discovery meeting, reset and navigate
+      if (selectedMeetingType !== 'discovery') {
+        setRecordingState('idle');
+        setMeetingSummary('');
+        setTranscription('');
+        setMeetingId('');
+        setSelectedMeetingType('');
+        setActiveView('meeting-notes');
       }
+      // For discovery meetings, keep state and show report option
+    } catch (error: any) {
+      console.error('Failed to save meeting:', error);
+      // TODO: Show error toast notification
+    }
+  };
+
+  const handleGenerateDiscoveryReport = async () => {
+    if (!selectedClient || !meetingId) return;
+
+    try {
+      const meetingTypeLabel = meetingTypes.find(t => t.id === selectedMeetingType)?.label || selectedMeetingType;
+      const meetingDate = clientMeetingNotes[selectedClient.id]?.[0]?.date || new Date().toISOString();
+
+      await generateDiscoveryReport({
+        clientId: selectedClient.id,
+        meetingId: meetingId,
+        transcription: transcription,
+        meetingDate: meetingDate,
+        meetingType: meetingTypeLabel,
+      });
+
+      console.log('Discovery report generated successfully');
+      // TODO: Navigate to discovery report view or show success message
 
       // Reset state and navigate to meeting-notes view
       setRecordingState('idle');
@@ -100,9 +139,19 @@ const Index = () => {
       setSelectedMeetingType('');
       setActiveView('meeting-notes');
     } catch (error: any) {
-      console.error('Failed to save meeting:', error);
+      console.error('Failed to generate discovery report:', error);
       // TODO: Show error toast notification
     }
+  };
+
+  const handleSkipReport = () => {
+    // Meeting already saved, just reset state and navigate
+    setRecordingState('idle');
+    setMeetingSummary('');
+    setTranscription('');
+    setMeetingId('');
+    setSelectedMeetingType('');
+    setActiveView('meeting-notes');
   };
 
   const handleClientSelect = (client: Client | null) => {
@@ -113,7 +162,7 @@ const Index = () => {
       setSelectedMeetingType('');
     }
     setSelectedClient(client);
-    setActiveView('documentation');
+    setActiveView('meeting-notes');
   };
 
   const getMeetingTypeLabel = () => {
@@ -144,6 +193,8 @@ const Index = () => {
           onStartRecording={handleStartRecording}
           onStopRecording={handleStopRecording}
           onAcceptSummary={handleAcceptSummary}
+          onGenerateDiscoveryReport={handleGenerateDiscoveryReport}
+          onSkipReport={handleSkipReport}
           meetingSummary={meetingSummary}
           clientMeetingNotes={clientMeetingNotes}
         />

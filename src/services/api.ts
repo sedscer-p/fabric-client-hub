@@ -40,6 +40,8 @@ export interface DiscoveryReportRequest {
   clientId: string;
   meetingId: string;
   transcription: string;
+  meetingDate: string;
+  meetingType: string;
 }
 
 export interface DiscoveryReportResponse {
@@ -50,6 +52,25 @@ export interface DiscoveryReportResponse {
     capacityForLoss: string;
     financialObjectives: string;
   };
+}
+
+export interface MeetingNote {
+  id: string;
+  date: string;
+  type: string;
+  summary: string;
+  transcription: string;
+  hasAudio: boolean;
+}
+
+export interface GetAllMeetingsResponse {
+  success: boolean;
+  meetingNotes: Record<string, MeetingNote[]>;
+}
+
+export interface GetClientMeetingsResponse {
+  success: boolean;
+  meetingNotes: MeetingNote[];
 }
 
 // API Functions
@@ -64,6 +85,40 @@ export async function processMeeting(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get all meeting notes for all clients
+ */
+export async function getAllMeetings(): Promise<GetAllMeetingsResponse> {
+  const response = await fetch(`${API_BASE}/api/meetings`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get all meeting notes for a specific client
+ */
+export async function getClientMeetings(clientId: string): Promise<GetClientMeetingsResponse> {
+  const response = await fetch(`${API_BASE}/api/meetings/${clientId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
   });
 
   if (!response.ok) {

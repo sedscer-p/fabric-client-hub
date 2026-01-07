@@ -23,5 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-#API env file 
+#API env file
 *.env
+
+# Data folder - ignore meeting data but keep structure
+data_folder/*/*
+!data_folder/README.md

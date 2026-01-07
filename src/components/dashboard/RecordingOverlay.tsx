@@ -10,7 +10,9 @@ interface RecordingOverlayProps {
   meetingType: string;
   meetingTypeId: string;
   onStopRecording: () => void;
-  onAcceptSummary: (selectedDocuments: string[]) => void;
+  onAcceptSummary: () => void;
+  onGenerateDiscoveryReport?: () => void;
+  onSkipReport?: () => void;
   meetingSummary?: string;
 }
 
@@ -21,17 +23,18 @@ const discoveryReportSections = [
   'Financial Objectives Record'
 ];
 
-export function RecordingOverlay({ 
-  state, 
+export function RecordingOverlay({
+  state,
   meetingType,
   meetingTypeId,
   onStopRecording,
   onAcceptSummary,
-  meetingSummary 
+  onGenerateDiscoveryReport,
+  onSkipReport,
+  meetingSummary
 }: RecordingOverlayProps) {
   const [elapsed, setElapsed] = useState(0);
   const [summaryAccepted, setSummaryAccepted] = useState(false);
-  const [generateReport, setGenerateReport] = useState(false);
 
   const isDiscoveryMeeting = meetingTypeId === 'discovery';
 
@@ -52,7 +55,6 @@ export function RecordingOverlay({
   useEffect(() => {
     if (state !== 'complete') {
       setSummaryAccepted(false);
-      setGenerateReport(false);
     }
   }, [state]);
 
@@ -64,15 +66,24 @@ export function RecordingOverlay({
 
 
   const handleAcceptSummary = () => {
+    // Always save the meeting first
+    onAcceptSummary();
+    // For discovery meetings, show the report option
     if (isDiscoveryMeeting) {
       setSummaryAccepted(true);
-    } else {
-      onAcceptSummary([]);
     }
   };
 
-  const handleFinish = (withReport: boolean) => {
-    onAcceptSummary(withReport ? ['discovery-report'] : []);
+  const handleSkipReport = () => {
+    if (onSkipReport) {
+      onSkipReport();
+    }
+  };
+
+  const handleGenerateReport = () => {
+    if (onGenerateDiscoveryReport) {
+      onGenerateDiscoveryReport();
+    }
   };
 
   if (state === 'idle') return null;
@@ -181,55 +192,35 @@ export function RecordingOverlay({
                 <p className="section-header mb-0">Generate Discovery Report</p>
               </div>
               <p className="text-xs text-muted-foreground">
-                Generate a comprehensive discovery report from this meeting
+                Would you like to generate a comprehensive discovery report from this meeting?
               </p>
             </div>
-            
-            <div 
-              className="flex items-start gap-3 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
-              onClick={() => setGenerateReport(!generateReport)}
-            >
-              <Checkbox
-                id="discovery-report"
-                checked={generateReport}
-                onCheckedChange={() => setGenerateReport(!generateReport)}
-                className="mt-0.5 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-              />
-              <div className="flex-1">
-                <label 
-                  htmlFor="discovery-report" 
-                  className="text-sm font-medium text-foreground cursor-pointer block"
-                >
-                  Discovery Report
-                </label>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Includes the following sections:
-                </p>
-                <ul className="mt-2 space-y-1">
-                  {discoveryReportSections.map((section) => (
-                    <li key={section} className="text-xs text-muted-foreground flex items-center gap-2">
-                      <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                      {section}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+
+            <div className="p-4 rounded-lg border border-border bg-muted/30">
+              <p className="text-sm font-medium text-foreground mb-2">Discovery Report Includes:</p>
+              <ul className="space-y-1">
+                {discoveryReportSections.map((section) => (
+                  <li key={section} className="text-xs text-muted-foreground flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
+                    {section}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          {/* Finish Button */}
+          {/* Action Buttons */}
           <div className="flex justify-end gap-3">
-            <Button 
-              onClick={() => handleFinish(false)}
+            <Button
+              onClick={handleSkipReport}
               variant="outline"
               className="h-10 px-6 border-border"
             >
               Skip
             </Button>
-            <Button 
-              onClick={() => handleFinish(true)}
-              disabled={!generateReport}
-              className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            <Button
+              onClick={handleGenerateReport}
+              className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <FileText className="w-4 h-4 mr-2" strokeWidth={1.5} />
               Generate Report

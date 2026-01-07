@@ -15,12 +15,58 @@ import {
   MeetingNote,
 } from '../types/index.js';
 import { generateSummary, generateDiscoveryReport } from '../services/anthropic.js';
-import { saveMeetingNote } from '../services/database.js';
+import { saveMeetingNote, saveDiscoveryReport, getAllMeetingNotes, getMeetingNotes } from '../services/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = express.Router();
+
+/**
+ * GET /api/meetings
+ * Get all meeting notes for all clients
+ */
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    console.log('Fetching all meeting notes');
+    const allMeetingNotes = await getAllMeetingNotes();
+
+    res.json({
+      success: true,
+      meetingNotes: allMeetingNotes,
+    });
+  } catch (error: any) {
+    console.error('Error fetching meeting notes:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'An unexpected error occurred while fetching meeting notes',
+    });
+  }
+});
+
+/**
+ * GET /api/meetings/:clientId
+ * Get all meeting notes for a specific client
+ */
+router.get('/:clientId', async (req: Request, res: Response) => {
+  try {
+    const { clientId } = req.params;
+    console.log(`Fetching meeting notes for client ${clientId}`);
+
+    const notes = await getMeetingNotes(clientId);
+
+    res.json({
+      success: true,
+      meetingNotes: notes,
+    });
+  } catch (error: any) {
+    console.error('Error fetching meeting notes:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'An unexpected error occurred while fetching meeting notes',
+    });
+  }
+});
 
 /**
  * POST /api/meetings/process
@@ -113,8 +159,8 @@ router.post('/save', async (req: Request, res: Response) => {
       hasAudio: hasAudio ?? true,
     };
 
-    // Save to database
-    const savedNote = saveMeetingNote(clientId, meetingNote);
+    // Save to database with transcription
+    const savedNote = await saveMeetingNote(clientId, meetingNote, transcription);
 
     const response: SaveMeetingResponse = {
       success: true,
@@ -140,13 +186,19 @@ router.post('/save', async (req: Request, res: Response) => {
  */
 router.post('/discovery-report', async (req: Request, res: Response) => {
   try {
-    const { clientId, meetingId, transcription }: DiscoveryReportRequest = req.body;
+    const {
+      clientId,
+      meetingId,
+      transcription,
+      meetingDate,
+      meetingType,
+    }: DiscoveryReportRequest & { meetingDate: string; meetingType: string } = req.body;
 
     // Validate request
-    if (!clientId || !meetingId || !transcription) {
+    if (!clientId || !meetingId || !transcription || !meetingDate || !meetingType) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'Missing required fields: clientId, meetingId, and transcription',
+        message: 'Missing required fields: clientId, meetingId, transcription, meetingDate, and meetingType',
       });
     }
 
@@ -155,12 +207,15 @@ router.post('/discovery-report', async (req: Request, res: Response) => {
     // Generate discovery report using Claude
     const report = await generateDiscoveryReport(transcription);
 
+    // Save discovery report to data folder
+    await saveDiscoveryReport(clientId, meetingId, meetingDate, meetingType, report);
+
     const response: DiscoveryReportResponse = {
       success: true,
       report,
     };
 
-    console.log(`Discovery report generated successfully`);
+    console.log(`Discovery report generated and saved successfully`);
 
     res.json(response);
   } catch (error: any) {
