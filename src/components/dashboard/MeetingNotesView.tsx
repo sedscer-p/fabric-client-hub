@@ -1,6 +1,6 @@
 import { Calendar, Play, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { meetingNotes, overallTrends } from '@/data/mockData';
+import { MeetingNote, overallTrends } from '@/data/mockData';
 import {
   Accordion,
   AccordionContent,
@@ -10,14 +10,15 @@ import {
 
 interface MeetingNotesViewProps {
   clientId: string;
+  meetingNotes: MeetingNote[];
 }
 
-export function MeetingNotesView({ clientId }: MeetingNotesViewProps) {
-  const notes = meetingNotes[clientId] || [];
+export function MeetingNotesView({ clientId, meetingNotes }: MeetingNotesViewProps) {
+  const notes = meetingNotes;
   const trends = overallTrends[clientId] || [];
 
   return (
-    <div className="px-12 pb-12 max-w-[800px]">
+    <div className="px-12 pt-12 pb-12 max-w-[800px]">
       {/* Meeting Notes */}
       <section>
         <h2 className="section-header mb-4">Meeting Notes</h2>

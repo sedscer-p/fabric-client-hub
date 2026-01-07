@@ -58,20 +58,6 @@ export const clients: Client[] = [
     lastMeetingDate: '2024-12-15',
     email: 'sarah.mitchell@email.com',
   },
-  {
-    id: '2',
-    name: 'Robert Chen',
-    advisor: 'Emily Parker',
-    lastMeetingDate: '2024-12-10',
-    email: 'robert.chen@email.com',
-  },
-  {
-    id: '3',
-    name: 'Amanda Foster',
-    advisor: 'James Thompson',
-    lastMeetingDate: '2024-11-28',
-    email: 'amanda.foster@email.com',
-  },
 ];
 
 export const meetingTypes = [
@@ -102,44 +88,9 @@ export const clientDocumentation: Record<string, ClientDocumentation> = {
 };
 
 export const meetingNotes: Record<string, MeetingNote[]> = {
-  '1': [
-    {
-      id: '1',
-      date: '2024-12-15',
-      type: 'Regular Review',
-      summary: 'Discussed retirement timeline, portfolio reallocation to bonds, and estate planning updates needed after property purchase.',
-      transcription: 'Full transcription available. Topics covered: retirement age confirmation at 62, bond allocation increase by 10%, estate document updates, ESG investment interest.',
-      hasAudio: true,
-    },
-    {
-      id: '2',
-      date: '2024-09-20',
-      type: 'Annual Review',
-      summary: 'Comprehensive annual review covering all financial goals, risk assessment, and investment performance.',
-      transcription: 'Full transcription available. Annual comprehensive review of portfolio performance, goal progress, and strategic planning.',
-      hasAudio: true,
-    },
-  ],
-  '2': [
-    {
-      id: '1',
-      date: '2024-12-10',
-      type: 'Regular Review',
-      summary: 'Business succession planning and cash reserve analysis. Tax-loss harvesting opportunities identified.',
-      transcription: 'Full transcription available. Discussion of 5-year exit timeline, 18-month cash reserves, and growth portfolio optimization.',
-      hasAudio: true,
-    },
-  ],
-  '3': [
-    {
-      id: '1',
-      date: '2024-11-28',
-      type: 'Regular Review',
-      summary: 'College funding review, life insurance adequacy, and home refinancing discussion.',
-      transcription: 'Full transcription available. 529 contributions on track, insurance adequate, refinancing options to explore.',
-      hasAudio: false,
-    },
-  ],
+  '1': [],
+  '2': [],
+  '3': [],
 };
 
 export const meetingPrepItems: Record<string, MeetingPrepItem[]> = {
@@ -162,21 +113,9 @@ export const meetingPrepItems: Record<string, MeetingPrepItem[]> = {
 };
 
 export const overallTrends: Record<string, string[]> = {
-  '1': [
-    'Consistent focus on retirement readiness across all meetings',
-    'Increasing interest in sustainable/ESG investing',
-    'Estate planning becoming higher priority after property purchase',
-  ],
-  '2': [
-    'Primary focus on business succession planning',
-    'Strong cash position maintained throughout',
-    'Tax optimization remains key concern',
-  ],
-  '3': [
-    'Education funding is top priority',
-    'Conservative approach to investment risk',
-    'Recent focus on debt optimization through refinancing',
-  ],
+  '1': [],
+  '2': [],
+  '3': [],
 };
 
 export const summaryPoints: Record<string, SummaryPoint[]> = {

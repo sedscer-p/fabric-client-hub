@@ -11,7 +11,7 @@ export function MeetingPrepView({ clientId }: MeetingPrepViewProps) {
   const completedItems = items.filter((item) => item.status === 'complete');
 
   return (
-    <div className="px-12 pb-12 max-w-[800px]">
+    <div className="px-12 pt-12 pb-12 max-w-[800px]">
       {/* Header */}
       <section>
         <h2 className="section-header mb-1">Meeting Preparation</h2>
