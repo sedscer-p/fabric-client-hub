@@ -158,6 +158,8 @@ router.post('/save', async (req: Request, res: Response) => {
       transcription,
       date,
       hasAudio,
+      clientActions,
+      advisorActions,
     }: SaveMeetingRequest = req.body;
 
     // Validate request
@@ -178,6 +180,8 @@ router.post('/save', async (req: Request, res: Response) => {
       summary,
       transcription,
       hasAudio: hasAudio ?? true,
+      clientActions,
+      advisorActions,
     };
 
     // Save to database with transcription

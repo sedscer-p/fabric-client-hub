@@ -1,15 +1,16 @@
 import { CheckCircle2, Clock, User, Briefcase } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { clientActions, advisorActions, ActionItem } from '@/data/mockData';
+import { ActionItem } from '@/data/mockData';
 import { format, parseISO } from 'date-fns';
 
 interface ActionsTabProps {
-  clientId: string;
+  clientActions?: ActionItem[];
+  advisorActions?: ActionItem[];
 }
 
 function ActionItemRow({ action }: { action: ActionItem }) {
   const isComplete = action.status === 'complete';
-  
+
   return (
     <div className="flex items-start justify-between py-3 border-b border-border last:border-0">
       <div className="flex items-start gap-3 flex-1">
@@ -36,9 +37,9 @@ function ActionItemRow({ action }: { action: ActionItem }) {
   );
 }
 
-export function ActionsTab({ clientId }: ActionsTabProps) {
-  const clientItems = clientActions[clientId] || [];
-  const advisorItems = advisorActions[clientId] || [];
+export function ActionsTab({ clientActions = [], advisorActions = [] }: ActionsTabProps) {
+  const clientItems = clientActions;
+  const advisorItems = advisorActions;
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">

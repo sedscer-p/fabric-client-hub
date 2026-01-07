@@ -15,8 +15,7 @@ export const GEMINI_CONFIG = {
   },
 
   // Temperature setting (0-2, lower = more deterministic)
-  // Currently using default (1.0) - uncomment to customize
-  // TEMPERATURE: 1.0,
+  TEMPERATURE: 0,
 
   // Response MIME type for structured outputs
   RESPONSE_MIME_TYPE: 'application/json',

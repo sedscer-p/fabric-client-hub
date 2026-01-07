@@ -93,6 +93,19 @@ export async function saveMeetingNote(
     'utf-8'
   );
 
+  // Save actions if they exist
+  if (note.clientActions || note.advisorActions) {
+    const actionsData = {
+      clientActions: note.clientActions || [],
+      advisorActions: note.advisorActions || [],
+    };
+    await fs.writeFile(
+      path.join(meetingFolder, 'actions.json'),
+      JSON.stringify(actionsData, null, 2),
+      'utf-8'
+    );
+  }
+
   // Save metadata as JSON
   const metadata = {
     id: note.id,
@@ -201,9 +214,22 @@ export async function getMeetingNotes(clientId: string): Promise<MeetingNote[]> 
 
       const summaryPath = path.join(clientPath, folder, 'summary.txt');
       const transcriptionPath = path.join(clientPath, folder, 'transcription.txt');
+      const actionsPath = path.join(clientPath, folder, 'actions.json');
 
       const summary = await fs.readFile(summaryPath, 'utf-8');
       const transcription = await fs.readFile(transcriptionPath, 'utf-8');
+
+      // Load actions if they exist
+      let clientActions;
+      let advisorActions;
+      try {
+        const actionsContent = await fs.readFile(actionsPath, 'utf-8');
+        const actionsData = JSON.parse(actionsContent);
+        clientActions = actionsData.clientActions;
+        advisorActions = actionsData.advisorActions;
+      } catch {
+        // Actions file doesn't exist or is invalid
+      }
 
       notes.push({
         id: metadata.id,
@@ -212,6 +238,8 @@ export async function getMeetingNotes(clientId: string): Promise<MeetingNote[]> 
         summary,
         transcription,
         hasAudio: metadata.hasAudio,
+        clientActions,
+        advisorActions,
       });
     } catch (error) {
       console.warn(`Failed to read meeting folder ${folder}:`, error);

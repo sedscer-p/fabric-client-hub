@@ -3,7 +3,7 @@ import { Sidebar } from '@/components/dashboard/Sidebar';
 import { MainPanel } from '@/components/dashboard/MainPanel';
 import { Client, ViewType, meetingTypes, MeetingNote } from '@/data/mockData';
 import { RecordingState } from '@/components/dashboard/RecordingOverlay';
-import { processMeeting, saveMeetingNote, generateDiscoveryReport, getAllMeetings } from '@/services/api';
+import { processMeeting, saveMeetingNote, generateDiscoveryReport, getAllMeetings, ActionItem } from '@/services/api';
 
 const Index = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -15,6 +15,8 @@ const Index = () => {
   const [meetingId, setMeetingId] = useState<string>('');
   const [processingError, setProcessingError] = useState<string | null>(null);
   const [clientMeetingNotes, setClientMeetingNotes] = useState<Record<string, MeetingNote[]>>({});
+  const [clientActions, setClientActions] = useState<ActionItem[]>([]);
+  const [advisorActions, setAdvisorActions] = useState<ActionItem[]>([]);
 
   // Load existing meetings on component mount
   useEffect(() => {
@@ -55,6 +57,22 @@ const Index = () => {
       setMeetingSummary(result.summary);
       setTranscription(result.transcription);
       setMeetingId(result.meetingId);
+
+      // Convert actions from string arrays to ActionItem arrays
+      const clientActionsData: ActionItem[] = (result.structuredData?.client_actions || []).map((text, index) => ({
+        id: `client-${index + 1}`,
+        text,
+        status: 'pending' as const,
+      }));
+
+      const advisorActionsData: ActionItem[] = (result.structuredData?.adviser_actions || []).map((text, index) => ({
+        id: `advisor-${index + 1}`,
+        text,
+        status: 'pending' as const,
+      }));
+
+      setClientActions(clientActionsData);
+      setAdvisorActions(advisorActionsData);
       setRecordingState('complete');
     } catch (error: any) {
       console.error('Failed to process meeting:', error);
@@ -76,6 +94,8 @@ const Index = () => {
         summary: meetingSummary,
         transcription: transcription,
         hasAudio: true,
+        clientActions,
+        advisorActions,
       };
 
       // Add to local state immediately
@@ -93,6 +113,8 @@ const Index = () => {
         transcription: transcription,
         date: newMeetingNote.date,
         hasAudio: true,
+        clientActions,
+        advisorActions,
       });
 
       console.log('Meeting note saved successfully');

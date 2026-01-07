@@ -39,6 +39,8 @@ export interface MeetingNote {
   summary: string;
   transcription: string;
   hasAudio: boolean;
+  clientActions?: ActionItem[];
+  advisorActions?: ActionItem[];
 }
 
 export interface MeetingPrepItem {

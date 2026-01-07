@@ -8,10 +8,22 @@ export interface ProcessMeetingRequest {
   duration: number;
 }
 
+export interface ActionItem {
+  id: string;
+  text: string;
+  status: 'pending' | 'complete';
+  dueDate?: string;
+}
+
 export interface ProcessMeetingResponse {
   transcription: string;
   summary: string;
   meetingId: string;
+  structuredData?: {
+    meeting_summary: string;
+    adviser_actions: string[];
+    client_actions: string[];
+  };
 }
 
 export interface SaveMeetingRequest {
@@ -22,6 +34,8 @@ export interface SaveMeetingRequest {
   transcription: string;
   date: string;
   hasAudio: boolean;
+  clientActions?: ActionItem[];
+  advisorActions?: ActionItem[];
 }
 
 export interface SaveMeetingResponse {
@@ -61,6 +75,8 @@ export interface MeetingNote {
   summary: string;
   transcription: string;
   hasAudio: boolean;
+  clientActions?: ActionItem[];
+  advisorActions?: ActionItem[];
 }
 
 export interface GetAllMeetingsResponse {

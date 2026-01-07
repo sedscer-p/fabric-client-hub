@@ -1,14 +1,20 @@
 // Google Gemini API service for meeting summarization and discovery report generation
 
-import { GoogleGenAI, Type } from '@google/genai';
-import fs from 'fs/promises';
+// IMPORTANT: Load environment variables FIRST before any other imports
+import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { MeetingSummaryStructuredOutput } from '../types/index.js';
-import { GEMINI_CONFIG, ERROR_MESSAGES, PROMPTS_CONFIG } from '../config/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load .env file before importing anything else
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+
+import { GoogleGenAI, Type } from '@google/genai';
+import fs from 'fs/promises';
+import { MeetingSummaryStructuredOutput } from '../types/index.js';
+import { GEMINI_CONFIG, ERROR_MESSAGES, PROMPTS_CONFIG } from '../config/constants.js';
 
 // Initialize Gemini client
 const ai = new GoogleGenAI({
@@ -56,6 +62,7 @@ export async function generateSummary(transcription: string): Promise<MeetingSum
       contents: transcription,  // Transcript as main content
       config: {
         maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.MEETING_SUMMARY,
+        temperature: GEMINI_CONFIG.TEMPERATURE,
         responseMimeType: GEMINI_CONFIG.RESPONSE_MIME_TYPE,
         responseSchema: responseSchema,
         systemInstruction: systemInstruction,  // Prompt as system instruction
@@ -186,6 +193,7 @@ ${transcription}`,
           contents: prompt,
           config: {
             maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.DISCOVERY_REPORT,
+            temperature: GEMINI_CONFIG.TEMPERATURE,
           },
         });
 

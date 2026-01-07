@@ -1,5 +1,13 @@
 // Shared TypeScript interfaces for backend API
 
+// Action item interface matching frontend structure
+export interface MeetingActionItem {
+  id: string;
+  text: string;
+  status: 'pending' | 'complete';
+  dueDate?: string;
+}
+
 // MeetingNote interface matching frontend structure
 export interface MeetingNote {
   id: string;
@@ -8,6 +16,8 @@ export interface MeetingNote {
   summary: string;
   transcription: string;
   hasAudio: boolean;
+  clientActions?: MeetingActionItem[];
+  advisorActions?: MeetingActionItem[];
 }
 
 // API Request/Response types
@@ -33,6 +43,8 @@ export interface SaveMeetingRequest {
   transcription: string;
   date: string;          // ISO date string
   hasAudio: boolean;
+  clientActions?: MeetingActionItem[];
+  advisorActions?: MeetingActionItem[];
 }
 
 export interface SaveMeetingResponse {

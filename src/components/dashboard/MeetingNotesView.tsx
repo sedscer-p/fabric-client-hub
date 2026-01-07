@@ -8,6 +8,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ActionsTab } from './ActionsTab';
 
 interface MeetingNotesViewProps {
   clientId: string;
@@ -71,13 +72,20 @@ export function MeetingNotesView({ clientId, meetingNotes }: MeetingNotesViewPro
                     </TabsList>
 
                     <TabsContent value="actions" className="mt-0">
-                      <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <CheckSquare className="w-12 h-12 text-muted-foreground/50 mb-3" strokeWidth={1.5} />
-                        <p className="text-sm text-muted-foreground font-medium">Actions coming soon</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Action items extracted from this meeting will appear here
-                        </p>
-                      </div>
+                      {(note.clientActions?.length || note.advisorActions?.length) ? (
+                        <ActionsTab
+                          clientActions={note.clientActions}
+                          advisorActions={note.advisorActions}
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                          <CheckSquare className="w-12 h-12 text-muted-foreground/50 mb-3" strokeWidth={1.5} />
+                          <p className="text-sm text-muted-foreground font-medium">No actions</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            No action items were extracted from this meeting
+                          </p>
+                        </div>
+                      )}
                     </TabsContent>
 
                     <TabsContent value="summary" className="mt-0">
