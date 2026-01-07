@@ -285,6 +285,44 @@ export async function getAllMeetingNotes(): Promise<Record<string, MeetingNote[]
 }
 
 /**
+ * Get a specific meeting note by client ID and meeting ID
+ * @param clientId - The client's ID
+ * @param meetingId - The meeting ID
+ * @returns The meeting note or null if not found
+ */
+export async function getMeetingNote(clientId: string, meetingId: string): Promise<MeetingNote | null> {
+  const notes = await getMeetingNotes(clientId);
+  return notes.find(n => n.id === meetingId) || null;
+}
+
+/**
+ * Get discovery report for a meeting if it exists
+ * @param clientId - The client's ID
+ * @param meetingId - The meeting ID
+ * @returns The discovery report object or null if not found
+ */
+export async function getDiscoveryReport(clientId: string, meetingId: string): Promise<any | null> {
+  const notes = await getMeetingNotes(clientId);
+  const note = notes.find(n => n.id === meetingId);
+
+  if (!note) {
+    return null;
+  }
+
+  const clientFolder = getClientFolderName(clientId);
+  const meetingFolderName = createMeetingFolderName(note.date, note.type);
+  const reportPath = path.join(DATA_FOLDER, clientFolder, meetingFolderName, 'reports', 'discovery-report.json');
+
+  try {
+    const reportContent = await fs.readFile(reportPath, 'utf-8');
+    return JSON.parse(reportContent);
+  } catch {
+    // Report doesn't exist or is not in JSON format
+    return null;
+  }
+}
+
+/**
  * Delete a specific meeting note
  * @param clientId - The client's ID
  * @param meetingId - The meeting note ID to delete

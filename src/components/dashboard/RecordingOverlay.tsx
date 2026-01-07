@@ -1,7 +1,19 @@
-import { Mic, Square, Loader2, Check, FileText, ArrowRight } from 'lucide-react';
+import { Mic, Square, Loader2, Check, FileText, ArrowRight, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useEffect, useState } from 'react';
+import { sendMeetingEmail } from '@/services/api';
+import { toast } from 'sonner';
 
 export type RecordingState = 'idle' | 'recording' | 'processing' | 'complete';
 
@@ -14,6 +26,11 @@ interface RecordingOverlayProps {
   onGenerateDiscoveryReport?: () => void;
   onSkipReport?: () => void;
   meetingSummary?: string;
+  clientId?: string;
+  clientName?: string;
+  clientEmail?: string;
+  advisorName?: string;
+  meetingId?: string;
 }
 
 const discoveryReportSections = [
@@ -31,10 +48,19 @@ export function RecordingOverlay({
   onAcceptSummary,
   onGenerateDiscoveryReport,
   onSkipReport,
-  meetingSummary
+  meetingSummary,
+  clientId,
+  clientName,
+  clientEmail,
+  advisorName,
+  meetingId
 }: RecordingOverlayProps) {
   const [elapsed, setElapsed] = useState(0);
   const [summaryAccepted, setSummaryAccepted] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState('s.edscer@gmail.com');
+  const [includeTranscription, setIncludeTranscription] = useState(false);
 
   const isDiscoveryMeeting = meetingTypeId === 'discovery';
 
@@ -83,6 +109,44 @@ export function RecordingOverlay({
   const handleGenerateReport = () => {
     if (onGenerateDiscoveryReport) {
       onGenerateDiscoveryReport();
+    }
+  };
+
+  const handleOpenEmailDialog = () => {
+    setEmailDialogOpen(true);
+  };
+
+  const handleSendEmail = async () => {
+    if (!clientId || !meetingId || !clientName || !advisorName) {
+      toast.error('Missing required information to send email');
+      return;
+    }
+
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setEmailSending(true);
+    setEmailDialogOpen(false);
+
+    try {
+      await sendMeetingEmail({
+        clientId,
+        meetingId,
+        recipientEmail,
+        clientName,
+        advisorName,
+        includeTranscription,
+      });
+      toast.success(`Meeting summary sent to ${recipientEmail}`);
+      // Reset to default
+      setRecipientEmail('s.edscer@gmail.com');
+      setIncludeTranscription(false);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send email');
+    } finally {
+      setEmailSending(false);
     }
   };
 
@@ -151,8 +215,21 @@ export function RecordingOverlay({
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <Button 
+          <div className="flex justify-end gap-3">
+            <Button
+              onClick={handleOpenEmailDialog}
+              variant="outline"
+              className="h-10 px-6 border-border"
+              disabled={emailSending}
+            >
+              {emailSending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" strokeWidth={1.5} />
+              ) : (
+                <Mail className="w-4 h-4 mr-2" strokeWidth={1.5} />
+              )}
+              {emailSending ? 'Sending...' : 'Email Summary'}
+            </Button>
+            <Button
               onClick={handleAcceptSummary}
               className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90"
             >
@@ -163,6 +240,54 @@ export function RecordingOverlay({
               )}
             </Button>
           </div>
+
+          {/* Email Dialog */}
+          <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Email Meeting Summary</DialogTitle>
+                <DialogDescription>
+                  Send the meeting summary to a specified email address.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Recipient Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="email@example.com"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="includeTranscription"
+                    checked={includeTranscription}
+                    onCheckedChange={(checked) => setIncludeTranscription(checked as boolean)}
+                  />
+                  <Label
+                    htmlFor="includeTranscription"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Include full transcription
+                  </Label>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setEmailDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleSendEmail}>
+                  Send Email
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       );
     }

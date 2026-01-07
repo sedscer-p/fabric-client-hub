@@ -15,8 +15,9 @@ import {
   MeetingNote,
 } from '../types/index.js';
 import { generateSummary, generateDiscoveryReport } from '../services/gemini.js';
-import { saveMeetingNote, saveDiscoveryReport, getAllMeetingNotes, getMeetingNotes } from '../services/database.js';
+import { saveMeetingNote, saveDiscoveryReport, getAllMeetingNotes, getMeetingNotes, getMeetingNote, getDiscoveryReport } from '../services/database.js';
 import { saveMeetingActions } from '../services/fileStorage.js';
+import { sendMeetingSummaryEmail, sendDiscoveryReportEmail, validateEmailConfiguration } from '../services/email.js';
 import { ERROR_MESSAGES, PROMPTS_CONFIG } from '../config/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -257,6 +258,113 @@ router.post('/discovery-report', async (req: Request, res: Response) => {
     res.status(500).json({
       error: 'Internal server error',
       message: ERROR_MESSAGES.SERVER.INTERNAL_ERROR,
+    });
+  }
+});
+
+/**
+ * POST /api/meetings/:clientId/:meetingId/send-email
+ * Send meeting summary email to client
+ */
+router.post('/:clientId/:meetingId/send-email', async (req: Request, res: Response) => {
+  try {
+    const { clientId, meetingId } = req.params;
+    const {
+      recipientEmail,
+      clientName,
+      advisorName,
+      includeTranscription = false,
+      includeReport = false,
+    } = req.body;
+
+    // Validate request
+    if (!clientId || !meetingId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required parameters: clientId and meetingId',
+      });
+    }
+
+    if (!recipientEmail || !clientName || !advisorName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: recipientEmail, clientName, and advisorName',
+      });
+    }
+
+    // Validate email configuration
+    const configValidation = validateEmailConfiguration();
+    if (!configValidation.valid) {
+      return res.status(500).json({
+        success: false,
+        error: `Email service not configured: ${configValidation.error}`,
+      });
+    }
+
+    console.log(`Sending email for meeting ${meetingId} to ${recipientEmail}`);
+
+    // Get meeting note from database
+    const meetingNote = await getMeetingNote(clientId, meetingId);
+    if (!meetingNote) {
+      return res.status(404).json({
+        success: false,
+        error: 'Meeting not found',
+      });
+    }
+
+    // Check if discovery report exists and should be included
+    let discoveryReport = null;
+    if (includeReport && meetingNote.type.toLowerCase().includes('discovery')) {
+      discoveryReport = await getDiscoveryReport(clientId, meetingId);
+    }
+
+    // Send appropriate email based on content
+    let emailResult;
+
+    if (discoveryReport && includeReport) {
+      // Send discovery report email
+      emailResult = await sendDiscoveryReportEmail({
+        recipientEmail,
+        recipientName: clientName,
+        clientName,
+        meetingDate: meetingNote.date,
+        advisorName,
+        report: discoveryReport,
+      });
+    } else {
+      // Send meeting summary email
+      emailResult = await sendMeetingSummaryEmail({
+        recipientEmail,
+        recipientName: clientName,
+        clientName,
+        meetingType: meetingNote.type,
+        meetingDate: meetingNote.date,
+        advisorName,
+        summary: meetingNote.summary,
+        transcription: meetingNote.transcription,
+        includeTranscription,
+      });
+    }
+
+    if (emailResult.success) {
+      console.log(`Email sent successfully. Email ID: ${emailResult.emailId}`);
+      res.json({
+        success: true,
+        message: 'Email sent successfully',
+        emailId: emailResult.emailId,
+      });
+    } else {
+      console.error(`Failed to send email: ${emailResult.error}`);
+      res.status(500).json({
+        success: false,
+        error: emailResult.error || 'Failed to send email',
+      });
+    }
+  } catch (error: any) {
+    console.error('Error sending email:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'An unexpected error occurred while sending email',
     });
   }
 });

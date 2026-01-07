@@ -97,6 +97,25 @@ export const ERROR_MESSAGES = {
 } as const;
 
 /**
+ * Email Configuration
+ * Settings for Resend email service
+ */
+export const EMAIL_CONFIG = {
+  // Email sender details (from environment variables)
+  SENDER_EMAIL: process.env.SENDER_EMAIL || 'onboarding@resend.dev',
+  SENDER_NAME: process.env.SENDER_NAME || 'Fabric Client Management',
+
+  // Rate limiting (emails per minute per user)
+  RATE_LIMIT: {
+    MAX_EMAILS_PER_MINUTE: 10,
+  },
+
+  // Email preferences
+  DEFAULT_INCLUDE_TRANSCRIPTION: false,
+  DEFAULT_INCLUDE_REPORT: false,
+} as const;
+
+/**
  * API Endpoints
  * Base paths for different API routes
  */

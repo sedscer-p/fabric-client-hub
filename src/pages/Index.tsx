@@ -219,6 +219,7 @@ const Index = () => {
           onSkipReport={handleSkipReport}
           meetingSummary={meetingSummary}
           clientMeetingNotes={clientMeetingNotes}
+          meetingId={meetingId}
         />
       </div>
     </div>
