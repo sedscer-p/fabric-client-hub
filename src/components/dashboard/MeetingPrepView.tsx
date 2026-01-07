@@ -12,6 +12,11 @@ export function MeetingPrepView({ clientId }: MeetingPrepViewProps) {
 
   return (
     <div className="px-12 pt-12 pb-12 max-w-[800px]">
+      {/* Mock Data Notice */}
+      <div className="mb-6 px-4 py-2 bg-muted/50 border border-border rounded-lg">
+        <p className="text-xs text-muted-foreground font-medium">MOCK DATA</p>
+      </div>
+
       {/* Header */}
       <section>
         <h2 className="section-header mb-1">Meeting Preparation</h2>
