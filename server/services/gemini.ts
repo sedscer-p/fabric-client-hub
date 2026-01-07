@@ -218,3 +218,75 @@ ${transcription}`,
     throw new Error('Failed to generate discovery report');
   }
 }
+
+/**
+ * Generate a document from a meeting transcription based on a specific template
+ * @param transcription - The meeting transcription text
+ * @param documentType - The identifier for the document type (e.g., 'discovery_document')
+ * @returns The generated document text
+ */
+export async function generateDocument(transcription: string, documentType: string): Promise<string> {
+  console.log(`Generating document of type ${documentType} with Gemini API...`);
+
+  try {
+    // 1. Load the system prompt template
+    const promptPath = path.join(__dirname, '../../', PROMPTS_CONFIG.DOCUMENT_GENERATOR);
+    const systemPromptTemplate = await fs.readFile(promptPath, 'utf-8');
+
+    // 2. Load the document description and template data
+    const templatesPath = path.join(__dirname, '../../', PROMPTS_CONFIG.DOCUMENT_TEMPLATES);
+    const templatesData = JSON.parse(await fs.readFile(templatesPath, 'utf-8'));
+
+    // 3. Find the specific template
+    // The JSON structure is: { "documentDescriptionTemplates": [ { "key": { "description": "...", "template": "..." } } ] }
+    const templateEntry = templatesData.documentDescriptionTemplates.find((entry: any) => entry[documentType]);
+
+    if (!templateEntry) {
+      throw new Error(`Document type template not found: ${documentType}`);
+    }
+
+    const { description, template } = templateEntry[documentType];
+
+    // 4. Fill the system prompt with the template data
+    // Format in document-generator.txt: {{document_description}} and {document_template}
+    let systemInstruction = systemPromptTemplate
+      .replace('{{document_description}}', description)
+      .replace('{document_template}', template);
+
+    // 5. Call Gemini API
+    const response = await ai.models.generateContent({
+      model: GEMINI_CONFIG.MODEL,
+      contents: transcription, // Transcription as user message
+      config: {
+        maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.MEETING_SUMMARY, // Using same token limit as summary for now
+        temperature: GEMINI_CONFIG.TEMPERATURE,
+        systemInstruction: systemInstruction,
+      },
+    });
+
+    // Check for safety blocks or other issues
+    if (response.candidates && response.candidates[0]) {
+      const candidate = response.candidates[0];
+      if (candidate.finishReason === 'SAFETY') {
+        throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
+      }
+    }
+
+    const responseText = response.text || '';
+
+    if (!responseText) {
+      throw new Error('Empty response from Gemini API');
+    }
+
+    console.log(`Document generated successfully (${responseText.length} chars)`);
+    return responseText;
+
+  } catch (error) {
+    console.error('Error generating document:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to generate document');
+  }
+}
+

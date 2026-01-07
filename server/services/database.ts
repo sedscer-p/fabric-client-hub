@@ -159,6 +159,44 @@ export async function saveDiscoveryReport(
 }
 
 /**
+ * Save a generated document for a meeting
+ * @param clientId - The client's ID
+ * @param meetingId - The meeting ID
+ * @param meetingDate - The meeting date
+ * @param meetingType - The meeting type
+ * @param documentType - The type/name of the document
+ * @param content - The document content
+ */
+export async function saveGeneratedDocument(
+  clientId: string,
+  meetingId: string,
+  meetingDate: string,
+  meetingType: string,
+  documentType: string,
+  content: string
+): Promise<void> {
+  const clientFolder = getClientFolderName(clientId);
+  const meetingFolderName = createMeetingFolderName(meetingDate, meetingType);
+  const reportsFolder = path.join(DATA_FOLDER, clientFolder, meetingFolderName, 'reports');
+
+  // Ensure reports folder exists
+  await ensureDirectory(reportsFolder);
+
+  // Use documentType as filename (safe slug)
+  const filename = `${documentType.toLowerCase().replace(/\s+/g, '-')}.txt`;
+
+  // Save document
+  await fs.writeFile(
+    path.join(reportsFolder, filename),
+    content,
+    'utf-8'
+  );
+
+  console.log(`Saved document ${documentType} for meeting ${meetingId} to ${reportsFolder}`);
+}
+
+
+/**
  * Save actions from a meeting (placeholder for future implementation)
  * @param clientId - The client's ID
  * @param meetingId - The meeting ID
@@ -231,6 +269,28 @@ export async function getMeetingNotes(clientId: string): Promise<MeetingNote[]> 
         // Actions file doesn't exist or is invalid
       }
 
+      // Load reports if they exist
+      const reports: { type: string; content: string }[] = [];
+      const reportsPath = path.join(clientPath, folder, 'reports');
+      try {
+        const reportFiles = await fs.readdir(reportsPath);
+        for (const file of reportFiles) {
+          if (file.endsWith('.txt')) {
+            const content = await fs.readFile(path.join(reportsPath, file), 'utf-8');
+            // Use filename (without extension) as type, converting slugs back to title case-ish
+            const type = file
+              .replace('.txt', '')
+              .split('-')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+
+            reports.push({ type, content });
+          }
+        }
+      } catch {
+        // Reports directory might not exist
+      }
+
       notes.push({
         id: metadata.id,
         date: metadata.date,
@@ -240,6 +300,7 @@ export async function getMeetingNotes(clientId: string): Promise<MeetingNote[]> 
         hasAudio: metadata.hasAudio,
         clientActions,
         advisorActions,
+        reports: reports.length > 0 ? reports : undefined,
       });
     } catch (error) {
       console.warn(`Failed to read meeting folder ${folder}:`, error);

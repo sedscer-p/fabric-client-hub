@@ -7,7 +7,7 @@ import {
 } from './emailTemplates.js';
 
 // Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // Email configuration from environment variables
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'onboarding@resend.dev';
@@ -106,6 +106,13 @@ export async function sendMeetingSummaryEmail(
     })}`;
 
     // Send email via Resend
+    if (!resend) {
+      return {
+        success: false,
+        error: 'Email service not configured (RESEND_API_KEY missing)',
+      };
+    }
+
     const result = await resend.emails.send({
       from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
       to: [recipientEmail],
@@ -173,6 +180,13 @@ export async function sendDiscoveryReportEmail(
     })}`;
 
     // Send email via Resend
+    if (!resend) {
+      return {
+        success: false,
+        error: 'Email service not configured (RESEND_API_KEY missing)',
+      };
+    }
+
     const result = await resend.emails.send({
       from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
       to: [recipientEmail],

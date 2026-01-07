@@ -17,6 +17,7 @@ const Index = () => {
   const [clientMeetingNotes, setClientMeetingNotes] = useState<Record<string, MeetingNote[]>>({});
   const [clientActions, setClientActions] = useState<ActionItem[]>([]);
   const [advisorActions, setAdvisorActions] = useState<ActionItem[]>([]);
+  const [meetingDate, setMeetingDate] = useState<string>('');
 
   // Load existing meetings on component mount
   useEffect(() => {
@@ -74,6 +75,9 @@ const Index = () => {
       setClientActions(clientActionsData);
       setAdvisorActions(advisorActionsData);
       setRecordingState('complete');
+
+      // Capture the date that will be used for saving
+      setMeetingDate(new Date().toISOString());
     } catch (error: any) {
       console.error('Failed to process meeting:', error);
       setProcessingError(error.message || 'Failed to process meeting');
@@ -89,7 +93,7 @@ const Index = () => {
       const meetingTypeLabel = meetingTypes.find(t => t.id === selectedMeetingType)?.label || selectedMeetingType;
       const newMeetingNote: MeetingNote = {
         id: meetingId,
-        date: new Date().toISOString(),
+        date: meetingDate,
         type: meetingTypeLabel,
         summary: meetingSummary,
         transcription: transcription,
@@ -111,7 +115,7 @@ const Index = () => {
         meetingType: meetingTypeLabel,
         summary: meetingSummary,
         transcription: transcription,
-        date: newMeetingNote.date,
+        date: meetingDate,
         hasAudio: true,
         clientActions,
         advisorActions,
@@ -166,7 +170,15 @@ const Index = () => {
     }
   };
 
-  const handleSkipReport = () => {
+  const handleSkipReport = async () => {
+    // Refresh meetings to include any newly generated reports
+    try {
+      const response = await getAllMeetings();
+      setClientMeetingNotes(response.meetingNotes);
+    } catch (error) {
+      console.error('Failed to refresh meetings:', error);
+    }
+
     // Meeting already saved, just reset state and navigate
     setRecordingState('idle');
     setMeetingSummary('');
@@ -195,8 +207,8 @@ const Index = () => {
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      <Sidebar 
-        selectedClient={selectedClient} 
+      <Sidebar
+        selectedClient={selectedClient}
         onClientSelect={handleClientSelect}
         activeView={activeView}
         onViewChange={setActiveView}
@@ -220,6 +232,8 @@ const Index = () => {
           meetingSummary={meetingSummary}
           clientMeetingNotes={clientMeetingNotes}
           meetingId={meetingId}
+          meetingDate={meetingDate}
+          transcription={transcription}
         />
       </div>
     </div>

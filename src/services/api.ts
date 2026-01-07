@@ -68,6 +68,29 @@ export interface DiscoveryReportResponse {
   };
 }
 
+export interface DocumentGenerationRequest {
+  clientId: string;
+  meetingId: string;
+  documentType: string;
+  transcription: string;
+  meetingDate: string;
+  meetingType: string;
+}
+
+export interface DocumentGenerationResponse {
+  success: boolean;
+  document: string;
+}
+
+export interface SaveDocumentRequest {
+  clientId: string;
+  meetingId: string;
+  documentType: string;
+  content: string;
+  meetingDate: string;
+  meetingType: string;
+}
+
 export interface MeetingNote {
   id: string;
   date: string;
@@ -77,6 +100,7 @@ export interface MeetingNote {
   hasAudio: boolean;
   clientActions?: ActionItem[];
   advisorActions?: ActionItem[];
+  reports?: { type: string; content: string }[];
 }
 
 export interface GetAllMeetingsResponse {
@@ -180,6 +204,44 @@ export async function generateDiscoveryReport(
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.message || `API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Generate a custom document from meeting transcription using a template
+ */
+export async function generateDocument(
+  request: DocumentGenerationRequest
+): Promise<DocumentGenerationResponse> {
+  const response = await fetch(`${API_BASE}/api/meetings/generate-document`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Save a generated document to the data folder
+ */
+export async function saveDocument(request: SaveDocumentRequest): Promise<{ success: boolean }> {
+  const response = await fetch(`${API_BASE}/api/meetings/save-document`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || `API error: ${response.status}`);
   }
 
   return response.json();

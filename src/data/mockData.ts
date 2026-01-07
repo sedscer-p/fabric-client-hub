@@ -41,6 +41,7 @@ export interface MeetingNote {
   hasAudio: boolean;
   clientActions?: ActionItem[];
   advisorActions?: ActionItem[];
+  reports?: { type: string; content: string }[];
 }
 
 export interface MeetingPrepItem {

@@ -21,6 +21,8 @@ interface MainPanelProps {
   meetingSummary: string;
   clientMeetingNotes: Record<string, MeetingNote[]>;
   meetingId?: string;
+  meetingDate?: string;
+  transcription?: string;
 }
 
 export function MainPanel({
@@ -37,7 +39,9 @@ export function MainPanel({
   onSkipReport,
   meetingSummary,
   clientMeetingNotes,
-  meetingId
+  meetingId,
+  meetingDate,
+  transcription
 }: MainPanelProps) {
   const isMeetingActive = recordingState !== 'idle';
 
@@ -92,6 +96,8 @@ export function MainPanel({
               clientEmail={client.email}
               advisorName={client.advisor}
               meetingId={meetingId}
+              meetingDate={meetingDate}
+              transcription={transcription}
             />
           </div>
         )}

@@ -14,8 +14,8 @@ import {
   DiscoveryReportResponse,
   MeetingNote,
 } from '../types/index.js';
-import { generateSummary, generateDiscoveryReport } from '../services/gemini.js';
-import { saveMeetingNote, saveDiscoveryReport, getAllMeetingNotes, getMeetingNotes, getMeetingNote, getDiscoveryReport } from '../services/database.js';
+import { generateSummary, generateDiscoveryReport, generateDocument } from '../services/gemini.js';
+import { saveMeetingNote, saveDiscoveryReport, saveGeneratedDocument, getAllMeetingNotes, getMeetingNotes, getMeetingNote, getDiscoveryReport } from '../services/database.js';
 import { saveMeetingActions } from '../services/fileStorage.js';
 import { sendMeetingSummaryEmail, sendDiscoveryReportEmail, validateEmailConfiguration } from '../services/email.js';
 import { ERROR_MESSAGES, PROMPTS_CONFIG } from '../config/constants.js';
@@ -234,7 +234,7 @@ router.post('/discovery-report', async (req: Request, res: Response) => {
     const report = await generateDiscoveryReport(transcription);
 
     // Save discovery report to data folder
-    await saveDiscoveryReport(clientId, meetingId, meetingDate, meetingType, report);
+    await saveDiscoveryReport(clientId, meetingId, meetingDate, meetingType, JSON.stringify(report, null, 2));
 
     const response: DiscoveryReportResponse = {
       success: true,
@@ -258,6 +258,91 @@ router.post('/discovery-report', async (req: Request, res: Response) => {
     res.status(500).json({
       error: 'Internal server error',
       message: ERROR_MESSAGES.SERVER.INTERNAL_ERROR,
+    });
+  }
+});
+
+/**
+ * POST /api/meetings/generate-document
+ * Generate a document from a meeting transcription based on a template
+ */
+router.post('/generate-document', async (req: Request, res: Response) => {
+  try {
+    const {
+      clientId,
+      meetingId,
+      documentType,
+      transcription,
+      meetingDate,
+      meetingType,
+    } = req.body;
+
+    // Validate request
+    if (!clientId || !meetingId || !documentType || !transcription || !meetingDate || !meetingType) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Missing required fields: clientId, meetingId, documentType, transcription, meetingDate, and meetingType',
+      });
+    }
+
+    console.log(`Generating document ${documentType} for meeting ${meetingId}`);
+
+    // Generate document using Gemini
+    const document = await generateDocument(transcription, documentType);
+
+    const response = {
+      success: true,
+      document,
+    };
+
+    console.log(`Document ${documentType} generated successfully`);
+
+    res.json(response);
+  } catch (error: any) {
+    console.error('Error generating document:', error);
+
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.message || ERROR_MESSAGES.SERVER.INTERNAL_ERROR,
+    });
+  }
+});
+
+/**
+ * POST /api/meetings/save-document
+ * Save a generated document to the data folder
+ */
+router.post('/save-document', async (req: Request, res: Response) => {
+  try {
+    const {
+      clientId,
+      meetingId,
+      documentType,
+      content,
+      meetingDate,
+      meetingType,
+    } = req.body;
+
+    // Validate request
+    if (!clientId || !meetingId || !documentType || !content || !meetingDate || !meetingType) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Missing required fields: clientId, meetingId, documentType, content, meetingDate, and meetingType',
+      });
+    }
+
+    console.log(`Saving document ${documentType} for meeting ${meetingId}`);
+
+    // Save document to data folder
+    await saveGeneratedDocument(clientId, meetingId, meetingDate, meetingType, documentType, content);
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Error saving document:', error);
+
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.message || ERROR_MESSAGES.SERVER.INTERNAL_ERROR,
     });
   }
 });

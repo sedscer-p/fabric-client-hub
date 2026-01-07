@@ -70,6 +70,8 @@ export const STORAGE_CONFIG = {
 export const PROMPTS_CONFIG = {
   MEETING_SUMMARY: 'prompts/meeting-summary-prompt.txt',
   MOCK_TRANSCRIPT: 'prompts/mock_transcript.txt',
+  DOCUMENT_GENERATOR: 'prompts/document-generator.txt',
+  DOCUMENT_TEMPLATES: 'prompts/document_description_templates.json',
 } as const;
 
 /**

@@ -1,4 +1,4 @@
-import { Mic, Square, Loader2, Check, FileText, ArrowRight, Mail } from 'lucide-react';
+import { Mic, Square, Loader2, Check, FileText, ArrowRight, Mail, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useEffect, useState } from 'react';
-import { sendMeetingEmail } from '@/services/api';
+import { sendMeetingEmail, generateDocument, saveDocument } from '@/services/api';
 import { toast } from 'sonner';
 
 export type RecordingState = 'idle' | 'recording' | 'processing' | 'complete';
@@ -31,6 +31,8 @@ interface RecordingOverlayProps {
   clientEmail?: string;
   advisorName?: string;
   meetingId?: string;
+  meetingDate?: string;
+  transcription?: string;
 }
 
 const discoveryReportSections = [
@@ -53,7 +55,9 @@ export function RecordingOverlay({
   clientName,
   clientEmail,
   advisorName,
-  meetingId
+  meetingId,
+  meetingDate,
+  transcription
 }: RecordingOverlayProps) {
   const [elapsed, setElapsed] = useState(0);
   const [summaryAccepted, setSummaryAccepted] = useState(false);
@@ -61,6 +65,43 @@ export function RecordingOverlay({
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState('s.edscer@gmail.com');
   const [includeTranscription, setIncludeTranscription] = useState(false);
+  const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
+  const [generatedDoc, setGeneratedDoc] = useState<string | null>(null);
+  const [selectedDocType, setSelectedDocType] = useState('discovery_document');
+
+  // Hardcoded document types for now (could be fetched from API later)
+  const documentTypes = [
+    { id: 'discovery_document', name: 'Discovery Report' },
+  ];
+
+  const handleGenerateCustomDocument = async () => {
+    if (!clientId || !meetingId || !transcription) {
+      toast.error('Missing information to generate document');
+      return;
+    }
+
+    setIsGeneratingDoc(true);
+    setGeneratedDoc(null);
+
+    try {
+      const response = await generateDocument({
+        clientId,
+        meetingId,
+        documentType: selectedDocType,
+        transcription,
+        meetingDate: meetingDate || new Date().toISOString(),
+        meetingType: meetingType
+      });
+
+      setGeneratedDoc(response.document);
+      toast.success('Document generated successfully');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to generate document');
+    } finally {
+      setIsGeneratingDoc(false);
+    }
+  };
+
 
   const isDiscoveryMeeting = meetingTypeId === 'discovery';
 
@@ -94,15 +135,52 @@ export function RecordingOverlay({
   const handleAcceptSummary = () => {
     // Always save the meeting first
     onAcceptSummary();
-    // For discovery meetings, show the report option
+
     if (isDiscoveryMeeting) {
+      // For discovery meetings, transition to the document generation view
       setSummaryAccepted(true);
+    } else {
+      // For other meetings, we are done
+      handleSkipReport();
+      toast.success('Meeting summary accepted');
+    }
+  };
+
+  const handleAcceptDocument = async () => {
+    if (!generatedDoc || !clientId || !meetingId || !meetingDate) return;
+
+    try {
+      await saveDocument({
+        clientId,
+        meetingId,
+        documentType: selectedDocType,
+        content: generatedDoc,
+        meetingDate,
+        meetingType
+      });
+
+      toast.success('Document saved successfully');
+      handleSkipReport(); // Finish the workflow
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save document');
     }
   };
 
   const handleSkipReport = () => {
     if (onSkipReport) {
       onSkipReport();
+    }
+  };
+
+  const handleReject = () => {
+    // If we have a generated doc, just clear it
+    if (generatedDoc) {
+      setGeneratedDoc(null);
+      toast.info('Document generation cancelled');
+    } else {
+      // If we are rejecting the summary, go back to idle or skip
+      handleSkipReport();
+      toast.info('Meeting summary rejected');
     }
   };
 
@@ -167,7 +245,7 @@ export function RecordingOverlay({
               </p>
             </div>
           </div>
-          <Button 
+          <Button
             onClick={onStopRecording}
             variant="outline"
             className="h-10 px-4 border-border hover:bg-muted"
@@ -203,42 +281,54 @@ export function RecordingOverlay({
     if (!summaryAccepted) {
       return (
         <div className="space-y-6">
-          <div className="card-minimal p-6">
-            <div className="mb-4">
-              <p className="section-header mb-2">Meeting Summary</p>
-              <p className="text-xs text-muted-foreground">{meetingType}</p>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <p className="section-header mb-0">Meeting Summary</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{meetingType}</p>
             </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleReject}
+                variant="outline"
+                size="sm"
+                className="h-8 border-destructive/20 text-destructive hover:bg-destructive/10"
+              >
+                <X className="w-3.5 h-3.5 mr-1.5" />
+                Reject
+              </Button>
+              <Button
+                onClick={handleOpenEmailDialog}
+                variant="outline"
+                size="sm"
+                className="h-8 border-border"
+                disabled={emailSending}
+              >
+                {emailSending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Mail className="w-3.5 h-3.5" />
+                )}
+              </Button>
+              <Button
+                onClick={handleAcceptSummary}
+                size="sm"
+                className="h-8 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Check className="w-3.5 h-3.5 mr-1.5" />
+                Accept
+                {isDiscoveryMeeting && (
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div className="card-minimal p-6 border-primary/10">
             <div className="prose prose-sm max-w-none">
               <div className="text-sm text-foreground whitespace-pre-line leading-relaxed">
                 {meetingSummary}
               </div>
             </div>
-          </div>
-
-          <div className="flex justify-end gap-3">
-            <Button
-              onClick={handleOpenEmailDialog}
-              variant="outline"
-              className="h-10 px-6 border-border"
-              disabled={emailSending}
-            >
-              {emailSending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" strokeWidth={1.5} />
-              ) : (
-                <Mail className="w-4 h-4 mr-2" strokeWidth={1.5} />
-              )}
-              {emailSending ? 'Sending...' : 'Email Summary'}
-            </Button>
-            <Button
-              onClick={handleAcceptSummary}
-              className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Check className="w-4 h-4 mr-2" strokeWidth={1.5} />
-              Accept Summary
-              {isDiscoveryMeeting && (
-                <ArrowRight className="w-4 h-4 ml-2" strokeWidth={1.5} />
-              )}
-            </Button>
           </div>
 
           {/* Email Dialog */}
@@ -309,48 +399,101 @@ export function RecordingOverlay({
             </div>
           </div>
 
-          {/* Discovery Report Option */}
+          {/* Document Generation Option */}
           <div className="card-minimal p-6">
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <FileText className="w-4 h-4 text-primary" strokeWidth={1.5} />
-                <p className="section-header mb-0">Generate Discovery Report</p>
+                <p className="section-header mb-0">Generate Document</p>
               </div>
               <p className="text-xs text-muted-foreground">
-                Would you like to generate a comprehensive discovery report from this meeting?
+                Select a document type to generate from this meeting transcript.
               </p>
             </div>
 
-            <div className="p-4 rounded-lg border border-border bg-muted/30">
-              <p className="text-sm font-medium text-foreground mb-2">Discovery Report Includes:</p>
-              <ul className="space-y-1">
-                {discoveryReportSections.map((section) => (
-                  <li key={section} className="text-xs text-muted-foreground flex items-center gap-2">
-                    <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-                    {section}
-                  </li>
-                ))}
-              </ul>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={selectedDocType}
+                  onChange={(e) => setSelectedDocType(e.target.value)}
+                >
+                  {documentTypes.map(type => (
+                    <option key={type.id} value={type.id}>{type.name}</option>
+                  ))}
+                </select>
+                <Button
+                  onClick={handleGenerateCustomDocument}
+                  disabled={isGeneratingDoc}
+                  className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90 whitespace-nowrap"
+                >
+                  {isGeneratingDoc ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" strokeWidth={1.5} />
+                  ) : (
+                    <FileText className="w-4 h-4 mr-2" strokeWidth={1.5} />
+                  )}
+                  {isGeneratingDoc ? 'Generating...' : 'Generate'}
+                </Button>
+              </div>
+
+              {generatedDoc && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      Generated {selectedDocType.replace('_', ' ')}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => {
+                          setGeneratedDoc(null);
+                          toast.info('Document rejected');
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-destructive hover:bg-destructive/10"
+                      >
+                        <X className="w-3.5 h-3.5 mr-1.5" />
+                        Reject
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleAcceptDocument}
+                        className="h-8 text-primary hover:bg-primary/10"
+                      >
+                        <Check className="w-3.5 h-3.5 mr-1.5" />
+                        Accept
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(generatedDoc);
+                          toast.success('Copied to clipboard');
+                        }}
+                        className="h-8 px-2"
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 max-h-[400px] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed font-semibold">
+                      {generatedDoc.split(/(\*\*.*?\*\*)/).map((part, i) => {
+                        if (part.startsWith('**') && part.endsWith('**')) {
+                          return <strong key={i} className="font-bold underline text-primary">{part.slice(2, -2)}</strong>;
+                        }
+                        return part;
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3">
-            <Button
-              onClick={handleSkipReport}
-              variant="outline"
-              className="h-10 px-6 border-border"
-            >
-              Skip
-            </Button>
-            <Button
-              onClick={handleGenerateReport}
-              className="h-10 px-6 bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <FileText className="w-4 h-4 mr-2" strokeWidth={1.5} />
-              Generate Report
-            </Button>
-          </div>
+          {/* No bottom buttons - Accept/Reject at top handle workflow */}
         </div>
       );
     }
@@ -358,3 +501,4 @@ export function RecordingOverlay({
 
   return null;
 }
+

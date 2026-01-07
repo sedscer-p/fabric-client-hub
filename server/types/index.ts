@@ -18,6 +18,7 @@ export interface MeetingNote {
   hasAudio: boolean;
   clientActions?: MeetingActionItem[];
   advisorActions?: MeetingActionItem[];
+  reports?: { type: string; content: string }[];
 }
 
 // API Request/Response types
@@ -66,6 +67,18 @@ export interface DiscoveryReportResponse {
     capacityForLoss: string;
     financialObjectives: string;
   };
+}
+
+export interface DocumentGenerationRequest {
+  clientId: string;
+  meetingId: string;
+  documentType: string;
+  transcription: string;
+}
+
+export interface DocumentGenerationResponse {
+  success: boolean;
+  document: string;
 }
 
 // Structured output from Claude API for meeting summaries
