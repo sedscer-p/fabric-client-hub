@@ -37,7 +37,7 @@ app.get('/', (req: Request, res: Response) => {
     name: 'Fabric Backend API',
     version: SERVER_CONFIG.API_VERSION,
     status: 'running',
-    anthropicConfigured: !!process.env.ANTHROPIC_API_KEY,
+    geminiConfigured: !!process.env.GEMINI_API_KEY,
     endpoints: {
       health: '/api/health',
       meetings: '/api/meetings',
@@ -51,7 +51,7 @@ app.get('/', (req: Request, res: Response) => {
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
-    anthropicConfigured: !!process.env.ANTHROPIC_API_KEY,
+    geminiConfigured: !!process.env.GEMINI_API_KEY,
     timestamp: new Date().toISOString(),
   });
 });
@@ -68,8 +68,8 @@ app.use((req: Request, res: Response) => {
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error('Server error:', err);
 
-  // Anthropic API errors
-  if (err.name === 'APIError' || err.message?.includes('Anthropic')) {
+  // Gemini API errors
+  if (err.name === 'APIError' || err.message?.includes('Gemini') || err.message?.includes('Google')) {
     return res.status(502).json({
       error: 'AI service error',
       message: 'Failed to communicate with AI service. Please try again.',
@@ -94,7 +94,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // Helper function to mask API key
 const maskApiKey = (key: string | undefined): string => {
   if (!key) return '✗ Not configured';
-  const visibleStart = 12; // Show "sk-ant-api03-"
+  const visibleStart = 8; // Show first 8 chars
   const visibleEnd = 4;
   if (key.length <= visibleStart + visibleEnd) return key;
   const masked = key.substring(0, visibleStart) + '...' + key.substring(key.length - visibleEnd);
@@ -106,7 +106,7 @@ app.listen(PORT, () => {
   console.log(`\n🚀 Fabric Backend Server`);
   console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
   console.log(`📍 Server running on http://localhost:${PORT}`);
-  console.log(`🔑 Anthropic API: ${maskApiKey(process.env.ANTHROPIC_API_KEY)}`);
+  console.log(`🔑 Gemini API: ${maskApiKey(process.env.GEMINI_API_KEY)}`);
   console.log(`⏰ Started at ${new Date().toISOString()}`);
   console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 });

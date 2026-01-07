@@ -1,25 +1,25 @@
 // Central configuration and constants for Fabric backend server
 
 /**
- * Anthropic API Configuration
- * Settings for Claude API calls including model selection and token limits
+ * Google Gemini API Configuration
+ * Settings for Gemini API calls including model selection and token limits
  */
-export const ANTHROPIC_CONFIG = {
-  // Model identifier for Claude API
-  MODEL: 'claude-sonnet-4-5-20250929',
-
-  // Beta features to enable
-  BETA_FEATURES: ['structured-outputs-2025-11-13'],
+export const GEMINI_CONFIG = {
+  // Model identifier for Gemini API
+  MODEL: 'gemini-3-flash-preview',
 
   // Token limits for different API call types
   MAX_TOKENS: {
-    MEETING_SUMMARY: 2048,     // For structured meeting summaries with actions
-    DISCOVERY_REPORT: 800,     // For individual discovery report sections
+    MEETING_SUMMARY: 8192,     // For structured meeting summaries with actions
+    DISCOVERY_REPORT: 4096,    // For individual discovery report sections
   },
 
-  // Temperature setting (0-1, lower = more deterministic)
+  // Temperature setting (0-2, lower = more deterministic)
   // Currently using default (1.0) - uncomment to customize
   // TEMPERATURE: 1.0,
+
+  // Response MIME type for structured outputs
+  RESPONSE_MIME_TYPE: 'application/json',
 } as const;
 
 /**
@@ -85,8 +85,9 @@ export const ERROR_MESSAGES = {
   AI_SERVICE: {
     GENERATION_FAILED: 'Failed to generate meeting summary. Please try again.',
     REPORT_FAILED: 'Failed to generate discovery report. Please try again.',
-    REFUSAL: 'Request was refused due to safety guidelines',
+    SAFETY_BLOCK: 'Request was blocked due to safety guidelines',
     TOKEN_LIMIT: 'Summary generation incomplete - token limit reached',
+    FINISH_REASON_ERROR: 'Response generation stopped unexpectedly',
   },
   FILE_STORAGE: {
     SAVE_FAILED: 'Failed to save action items to file',

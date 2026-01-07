@@ -14,7 +14,7 @@ import {
   DiscoveryReportResponse,
   MeetingNote,
 } from '../types/index.js';
-import { generateSummary, generateDiscoveryReport } from '../services/anthropic.js';
+import { generateSummary, generateDiscoveryReport } from '../services/gemini.js';
 import { saveMeetingNote, saveDiscoveryReport, getAllMeetingNotes, getMeetingNotes } from '../services/database.js';
 import { saveMeetingActions } from '../services/fileStorage.js';
 import { ERROR_MESSAGES, PROMPTS_CONFIG } from '../config/constants.js';
