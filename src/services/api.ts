@@ -2,6 +2,31 @@ const API_BASE = 'http://localhost:3001';
 
 // Type definitions for API requests and responses
 
+export interface Client {
+  id: string;
+  name: string;
+  advisor: string;
+  lastMeetingDate: string;
+  email: string;
+}
+
+export interface GetClientsResponse {
+  success: boolean;
+  clients: Client[];
+}
+
+export interface AddClientRequest {
+  name: string;
+  advisor: string;
+  email: string;
+}
+
+export interface AddClientResponse {
+  success: boolean;
+  client: Client;
+  message: string;
+}
+
 export interface ProcessMeetingRequest {
   clientId: string;
   meetingType: string;
@@ -219,6 +244,41 @@ export async function sendMeetingEmail(
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.error || `API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get all clients from the backend
+ */
+export async function getClients(): Promise<GetClientsResponse> {
+  const response = await fetch(`${API_BASE}/api/clients`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Add a new client
+ */
+export async function addClient(request: AddClientRequest): Promise<AddClientResponse> {
+  const response = await fetch(`${API_BASE}/api/clients`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `API error: ${response.status}`);
   }
 
   return response.json();

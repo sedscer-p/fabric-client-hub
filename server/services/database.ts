@@ -2,6 +2,7 @@
 // Saves data to data_folder for persistence
 
 import { MeetingNote } from '../types/index.js';
+import { getClientFolderName as getClientFolder } from './clients.js';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -13,23 +14,10 @@ const __dirname = path.dirname(__filename);
 const DATA_FOLDER = path.join(__dirname, '../../data_folder');
 
 /**
- * Convert client ID to folder name
- * Maps client IDs to safe, human-readable folder names
+ * Convert client ID to folder name using the client service
  */
-function getClientFolderName(clientId: string): string {
-  // Map known client IDs to folder names
-  const clientFolderMap: Record<string, string> = {
-    '1': 'sarah-mitchell',
-    'client-123': 'sarah-mitchell',
-  };
-
-  // Return mapped name if it exists
-  if (clientFolderMap[clientId]) {
-    return clientFolderMap[clientId];
-  }
-
-  // Fallback for unknown clients - sanitize the ID
-  return clientId.toLowerCase().replace(/\s+/g, '-');
+async function getClientFolderName(clientId: string): Promise<string> {
+  return await getClientFolder(clientId);
 }
 
 /**
@@ -71,7 +59,7 @@ export async function saveMeetingNote(
   note: MeetingNote,
   transcription: string
 ): Promise<MeetingNote> {
-  const clientFolder = getClientFolderName(clientId);
+  const clientFolder = await getClientFolderName(clientId);
   const meetingFolderName = createMeetingFolderName(note.date, note.type);
   const meetingFolder = path.join(DATA_FOLDER, clientFolder, meetingFolderName);
 
@@ -141,7 +129,7 @@ export async function saveDiscoveryReport(
   meetingType: string,
   report: string
 ): Promise<void> {
-  const clientFolder = getClientFolderName(clientId);
+  const clientFolder = await getClientFolderName(clientId);
   const meetingFolderName = createMeetingFolderName(meetingDate, meetingType);
   const reportsFolder = path.join(DATA_FOLDER, clientFolder, meetingFolderName, 'reports');
 
@@ -173,7 +161,7 @@ export async function saveMeetingActions(
   meetingType: string,
   actions: any
 ): Promise<void> {
-  const clientFolder = getClientFolderName(clientId);
+  const clientFolder = await getClientFolderName(clientId);
   const meetingFolderName = createMeetingFolderName(meetingDate, meetingType);
   const meetingFolder = path.join(DATA_FOLDER, clientFolder, meetingFolderName);
 
@@ -194,7 +182,7 @@ export async function saveMeetingActions(
  * @returns Array of meeting notes (empty array if none exist)
  */
 export async function getMeetingNotes(clientId: string): Promise<MeetingNote[]> {
-  const clientFolder = getClientFolderName(clientId);
+  const clientFolder = await getClientFolderName(clientId);
   const clientPath = path.join(DATA_FOLDER, clientFolder);
 
   try {
@@ -260,25 +248,15 @@ export async function getAllMeetingNotes(): Promise<Record<string, MeetingNote[]
   const result: Record<string, MeetingNote[]> = {};
 
   try {
-    const clients = await fs.readdir(DATA_FOLDER);
+    // Import getAllClients to get the client list dynamically
+    const { getAllClients } = await import('./clients.js');
+    const clients = await getAllClients();
 
-    // Reverse mapping from folder names to client IDs
-    const folderToClientMap: Record<string, string> = {
-      'sarah-mitchell': '1',
-    };
-
-    for (const clientFolder of clients) {
-      if (clientFolder === 'README.md' || clientFolder.startsWith('.')) {
-        continue;
-      }
-
-      // Map folder name back to client ID
-      const clientId = folderToClientMap[clientFolder] || clientFolder;
-
-      result[clientId] = await getMeetingNotes(clientId);
+    for (const client of clients) {
+      result[client.id] = await getMeetingNotes(client.id);
     }
   } catch (error) {
-    console.warn('Failed to read data folder:', error);
+    console.warn('Failed to read meeting notes:', error);
   }
 
   return result;
@@ -309,7 +287,7 @@ export async function getDiscoveryReport(clientId: string, meetingId: string): P
     return null;
   }
 
-  const clientFolder = getClientFolderName(clientId);
+  const clientFolder = await getClientFolderName(clientId);
   const meetingFolderName = createMeetingFolderName(note.date, note.type);
   const reportPath = path.join(DATA_FOLDER, clientFolder, meetingFolderName, 'reports', 'discovery-report.json');
 
@@ -336,7 +314,7 @@ export async function deleteMeetingNote(clientId: string, meetingId: string): Pr
     return false;
   }
 
-  const clientFolder = getClientFolderName(clientId);
+  const clientFolder = await getClientFolderName(clientId);
   const meetingFolderName = createMeetingFolderName(note.date, note.type);
   const meetingFolder = path.join(DATA_FOLDER, clientFolder, meetingFolderName);
 

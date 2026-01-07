@@ -6,12 +6,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { clients, Client, ViewType, meetingTypes } from '@/data/mockData';
+import { ViewType, meetingTypes } from '@/data/mockData';
 import { RecordingState } from './RecordingOverlay';
+import { AddClientDialog } from './AddClientDialog';
+import type { Client } from '@/services/api';
 
 interface SidebarProps {
+  clients: Client[];
   selectedClient: Client | null;
   onClientSelect: (client: Client | null) => void;
+  onClientAdded: (client: Client) => void;
   activeView: ViewType;
   onViewChange: (view: ViewType) => void;
   selectedMeetingType: string;
@@ -19,10 +23,12 @@ interface SidebarProps {
   isMeetingActive: boolean;
 }
 
-export function Sidebar({ 
-  selectedClient, 
-  onClientSelect, 
-  activeView, 
+export function Sidebar({
+  clients,
+  selectedClient,
+  onClientSelect,
+  onClientAdded,
+  activeView,
   onViewChange,
   selectedMeetingType,
   recordingState,
@@ -48,7 +54,7 @@ export function Sidebar({
       </div>
 
       {/* Client Selection */}
-      <div className="px-4 pb-6">
+      <div className="px-4 pb-4">
         <Select
           value={selectedClient?.id || ''}
           onValueChange={handleClientChange}
@@ -67,6 +73,11 @@ export function Sidebar({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Add New Client Button */}
+      <div className="px-4 pb-6">
+        <AddClientDialog onClientAdded={onClientAdded} />
       </div>
 
       {/* Navigation - Flat list */}

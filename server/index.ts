@@ -13,6 +13,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import meetingsRouter from './routes/meetings.js';
+import clientsRouter from './routes/clients.js';
 import { SERVER_CONFIG } from './config/constants.js';
 
 const app = express();
@@ -37,6 +38,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Routes
+app.use('/api/clients', clientsRouter);
 app.use('/api/meetings', meetingsRouter);
 
 // Root endpoint - API info
@@ -48,6 +50,7 @@ app.get('/', (req: Request, res: Response) => {
     geminiConfigured: !!process.env.GEMINI_API_KEY,
     endpoints: {
       health: '/api/health',
+      clients: '/api/clients',
       meetings: '/api/meetings',
     },
     frontend: SERVER_CONFIG.FRONTEND_ORIGIN,

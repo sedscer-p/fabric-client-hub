@@ -1,11 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { MainPanel } from '@/components/dashboard/MainPanel';
-import { Client, ViewType, meetingTypes, MeetingNote } from '@/data/mockData';
+import { ViewType, meetingTypes, MeetingNote } from '@/data/mockData';
 import { RecordingState } from '@/components/dashboard/RecordingOverlay';
-import { processMeeting, saveMeetingNote, generateDiscoveryReport, getAllMeetings, ActionItem } from '@/services/api';
+import {
+  processMeeting,
+  saveMeetingNote,
+  generateDiscoveryReport,
+  getAllMeetings,
+  getClients,
+  ActionItem,
+  type Client,
+} from '@/services/api';
 
 const Index = () => {
+  const [clients, setClients] = useState<Client[]>([]);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [activeView, setActiveView] = useState<ViewType>('meeting-notes');
   const [selectedMeetingType, setSelectedMeetingType] = useState<string>('');
@@ -18,20 +27,26 @@ const Index = () => {
   const [clientActions, setClientActions] = useState<ActionItem[]>([]);
   const [advisorActions, setAdvisorActions] = useState<ActionItem[]>([]);
 
-  // Load existing meetings on component mount
+  // Load clients and meetings on component mount
   useEffect(() => {
-    const loadMeetings = async () => {
+    const loadData = async () => {
       try {
-        const response = await getAllMeetings();
-        setClientMeetingNotes(response.meetingNotes);
+        // Load clients
+        const clientsResponse = await getClients();
+        setClients(clientsResponse.clients);
+        console.log('Loaded clients from API');
+
+        // Load meetings
+        const meetingsResponse = await getAllMeetings();
+        setClientMeetingNotes(meetingsResponse.meetingNotes);
         console.log('Loaded existing meetings from data folder');
       } catch (error) {
-        console.error('Failed to load meetings:', error);
-        // Fail silently - meetings will be empty
+        console.error('Failed to load data:', error);
+        // Fail silently - clients and meetings will be empty
       }
     };
 
-    loadMeetings();
+    loadData();
   }, []);
 
   const handleStartRecording = () => {
@@ -187,6 +202,14 @@ const Index = () => {
     setActiveView('meeting-notes');
   };
 
+  const handleClientAdded = (newClient: Client) => {
+    // Add new client to the list
+    setClients(prevClients => [...prevClients, newClient]);
+    // Automatically select the new client
+    setSelectedClient(newClient);
+    setActiveView('meeting-notes');
+  };
+
   const getMeetingTypeLabel = () => {
     return meetingTypes.find(t => t.id === selectedMeetingType)?.label || '';
   };
@@ -195,9 +218,11 @@ const Index = () => {
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      <Sidebar 
-        selectedClient={selectedClient} 
+      <Sidebar
+        clients={clients}
+        selectedClient={selectedClient}
         onClientSelect={handleClientSelect}
+        onClientAdded={handleClientAdded}
         activeView={activeView}
         onViewChange={setActiveView}
         selectedMeetingType={selectedMeetingType}
