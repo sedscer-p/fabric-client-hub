@@ -1,6 +1,6 @@
 import { Calendar, Play, TrendingUp, FileText, CheckSquare, Mail, Loader2, ChevronDown, ChevronUp, Copy, Headphones } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MeetingNote, overallTrends } from '@/data/mockData';
+import { MeetingNote } from '@/data/mockData';
 import {
   Accordion,
   AccordionContent,
@@ -95,7 +95,6 @@ const CollapsibleDocument = ({
 
 export function MeetingNotesView({ clientId, meetingNotes, clientName, clientEmail, advisorName }: MeetingNotesViewProps) {
   const notes = meetingNotes;
-  const trends = overallTrends[clientId] || [];
   const [sendingEmailFor, setSendingEmailFor] = useState<string | null>(null);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string>('');
@@ -299,23 +298,6 @@ export function MeetingNotesView({ clientId, meetingNotes, clientName, clientEma
               </AccordionItem>
             ))}
           </Accordion>
-        )}
-      </section>
-
-      {/* Overall Trends */}
-      <section className="mt-8">
-        <h2 className="section-header mb-4">Overall Trends</h2>
-        {trends.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No trends identified yet.</p>
-        ) : (
-          <ul className="space-y-3">
-            {trends.map((trend, index) => (
-              <li key={index} className="flex items-start gap-3">
-                <div className="bullet-accent" />
-                <span className="text-sm text-foreground">{trend}</span>
-              </li>
-            ))}
-          </ul>
         )}
       </section>
 
