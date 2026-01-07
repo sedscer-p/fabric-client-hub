@@ -1,4 +1,4 @@
-import { BookOpen, CheckSquare, User, Mic, CheckCircle } from 'lucide-react';
+import { BookOpen, User, Mic, CheckCircle } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -36,7 +36,6 @@ export function Sidebar({
 
   const viewOptions = [
     { id: 'meeting-notes' as ViewType, label: 'Meeting Notes', icon: BookOpen, description: 'Transcriptions & summaries' },
-    { id: 'meeting-prep' as ViewType, label: 'Meeting Prep', icon: CheckSquare, description: 'Actions to follow up' },
     { id: 'start-meeting' as ViewType, label: isMeetingActive ? 'Current Meeting' : 'Start a Meeting', icon: Mic, description: isMeetingActive ? 'Live recording & summary' : 'Begin a new recording' },
   ];
 

@@ -15,12 +15,58 @@ import {
   MeetingNote,
 } from '../types/index.js';
 import { generateSummary, generateDiscoveryReport } from '../services/anthropic.js';
-import { saveMeetingNote, saveDiscoveryReport } from '../services/database.js';
+import { saveMeetingNote, saveDiscoveryReport, getAllMeetingNotes, getMeetingNotes } from '../services/database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = express.Router();
+
+/**
+ * GET /api/meetings
+ * Get all meeting notes for all clients
+ */
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    console.log('Fetching all meeting notes');
+    const allMeetingNotes = await getAllMeetingNotes();
+
+    res.json({
+      success: true,
+      meetingNotes: allMeetingNotes,
+    });
+  } catch (error: any) {
+    console.error('Error fetching meeting notes:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'An unexpected error occurred while fetching meeting notes',
+    });
+  }
+});
+
+/**
+ * GET /api/meetings/:clientId
+ * Get all meeting notes for a specific client
+ */
+router.get('/:clientId', async (req: Request, res: Response) => {
+  try {
+    const { clientId } = req.params;
+    console.log(`Fetching meeting notes for client ${clientId}`);
+
+    const notes = await getMeetingNotes(clientId);
+
+    res.json({
+      success: true,
+      meetingNotes: notes,
+    });
+  } catch (error: any) {
+    console.error('Error fetching meeting notes:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'An unexpected error occurred while fetching meeting notes',
+    });
+  }
+});
 
 /**
  * POST /api/meetings/process

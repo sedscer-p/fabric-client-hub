@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { MainPanel } from '@/components/dashboard/MainPanel';
 import { Client, ViewType, meetingTypes, MeetingNote } from '@/data/mockData';
 import { RecordingState } from '@/components/dashboard/RecordingOverlay';
-import { processMeeting, saveMeetingNote, generateDiscoveryReport } from '@/services/api';
+import { processMeeting, saveMeetingNote, generateDiscoveryReport, getAllMeetings } from '@/services/api';
 
 const Index = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [activeView, setActiveView] = useState<ViewType>('documentation');
+  const [activeView, setActiveView] = useState<ViewType>('meeting-notes');
   const [selectedMeetingType, setSelectedMeetingType] = useState<string>('');
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [meetingSummary, setMeetingSummary] = useState<string>('');
@@ -15,6 +15,22 @@ const Index = () => {
   const [meetingId, setMeetingId] = useState<string>('');
   const [processingError, setProcessingError] = useState<string | null>(null);
   const [clientMeetingNotes, setClientMeetingNotes] = useState<Record<string, MeetingNote[]>>({});
+
+  // Load existing meetings on component mount
+  useEffect(() => {
+    const loadMeetings = async () => {
+      try {
+        const response = await getAllMeetings();
+        setClientMeetingNotes(response.meetingNotes);
+        console.log('Loaded existing meetings from data folder');
+      } catch (error) {
+        console.error('Failed to load meetings:', error);
+        // Fail silently - meetings will be empty
+      }
+    };
+
+    loadMeetings();
+  }, []);
 
   const handleStartRecording = () => {
     setRecordingState('recording');
@@ -72,7 +88,7 @@ const Index = () => {
       await saveMeetingNote({
         clientId: selectedClient.id,
         meetingId: meetingId,
-        meetingType: selectedMeetingType,
+        meetingType: meetingTypeLabel,
         summary: meetingSummary,
         transcription: transcription,
         date: newMeetingNote.date,
@@ -146,7 +162,7 @@ const Index = () => {
       setSelectedMeetingType('');
     }
     setSelectedClient(client);
-    setActiveView('documentation');
+    setActiveView('meeting-notes');
   };
 
   const getMeetingTypeLabel = () => {
