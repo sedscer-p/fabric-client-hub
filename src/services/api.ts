@@ -186,6 +186,45 @@ export async function generateDiscoveryReport(
 }
 
 /**
+ * Send meeting summary email to client
+ */
+export interface SendEmailRequest {
+  clientId: string;
+  meetingId: string;
+  recipientEmail: string;
+  clientName: string;
+  advisorName: string;
+  includeTranscription?: boolean;
+  includeReport?: boolean;
+}
+
+export interface SendEmailResponse {
+  success: boolean;
+  message?: string;
+  emailId?: string;
+  error?: string;
+}
+
+export async function sendMeetingEmail(
+  request: SendEmailRequest
+): Promise<SendEmailResponse> {
+  const { clientId, meetingId, ...body } = request;
+
+  const response = await fetch(`${API_BASE}/api/meetings/${clientId}/${meetingId}/send-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || `API error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
  * @deprecated Use processMeeting instead
  */
 export async function summarizeMeeting(transcription: string): Promise<string> {

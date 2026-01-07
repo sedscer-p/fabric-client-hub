@@ -20,6 +20,7 @@ interface MainPanelProps {
   onSkipReport?: () => void;
   meetingSummary: string;
   clientMeetingNotes: Record<string, MeetingNote[]>;
+  meetingId?: string;
 }
 
 export function MainPanel({
@@ -35,7 +36,8 @@ export function MainPanel({
   onGenerateDiscoveryReport,
   onSkipReport,
   meetingSummary,
-  clientMeetingNotes
+  clientMeetingNotes,
+  meetingId
 }: MainPanelProps) {
   const isMeetingActive = recordingState !== 'idle';
 
@@ -57,7 +59,15 @@ export function MainPanel({
 
       <div className="flex-1 overflow-auto">
         {activeView === 'documentation' && <DocumentationView clientId={client.id} />}
-        {activeView === 'meeting-notes' && <MeetingNotesView clientId={client.id} meetingNotes={clientMeetingNotes[client.id] || []} />}
+        {activeView === 'meeting-notes' && (
+          <MeetingNotesView
+            clientId={client.id}
+            meetingNotes={clientMeetingNotes[client.id] || []}
+            clientName={client.name}
+            clientEmail={client.email}
+            advisorName={client.advisor}
+          />
+        )}
         {activeView === 'meeting-prep' && <MeetingPrepView clientId={client.id} />}
         {activeView === 'start-meeting' && !isMeetingActive && (
           <StartMeetingView
@@ -77,6 +87,11 @@ export function MainPanel({
               onGenerateDiscoveryReport={onGenerateDiscoveryReport}
               onSkipReport={onSkipReport}
               meetingSummary={meetingSummary}
+              clientId={client.id}
+              clientName={client.name}
+              clientEmail={client.email}
+              advisorName={client.advisor}
+              meetingId={meetingId}
             />
           </div>
         )}
