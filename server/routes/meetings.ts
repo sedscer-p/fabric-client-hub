@@ -16,6 +16,8 @@ import {
 } from '../types/index.js';
 import { generateSummary, generateDiscoveryReport } from '../services/anthropic.js';
 import { saveMeetingNote } from '../services/database.js';
+import { saveMeetingActions } from '../services/fileStorage.js';
+import { ERROR_MESSAGES, PROMPTS_CONFIG } from '../config/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,26 +36,44 @@ router.post('/process', async (req: Request, res: Response) => {
     if (!clientId || !meetingType) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'Missing required fields: clientId and meetingType',
+        message: ERROR_MESSAGES.VALIDATION.MISSING_FIELDS + ': clientId and meetingType',
       });
     }
 
     console.log(`Processing meeting for client ${clientId}, type: ${meetingType}`);
 
     // Load mock transcript
-    const transcriptPath = path.join(__dirname, '../../prompts/mock_transcript.txt');
+    const transcriptPath = path.join(__dirname, '../../', PROMPTS_CONFIG.MOCK_TRANSCRIPT);
     const transcription = await fs.readFile(transcriptPath, 'utf-8');
 
-    // Generate AI summary using Claude
-    const summary = await generateSummary(transcription);
+    // Generate AI summary with structured outputs
+    const structuredOutput = await generateSummary(transcription);
 
-    // Generate unique meeting ID
+    // Generate unique meeting ID and date
     const meetingId = randomUUID();
+    const meetingDate = new Date().toISOString();
 
+    // Save action items to JSON files
+    try {
+      await saveMeetingActions(
+        clientId,
+        meetingId,
+        meetingDate,
+        structuredOutput.client_actions,
+        structuredOutput.adviser_actions
+      );
+    } catch (fileError) {
+      // Log error but don't fail the request
+      console.error('Failed to save action items to files:', fileError);
+      // Continue - the summary is still valid
+    }
+
+    // Build response (backward compatible)
     const response: ProcessMeetingResponse = {
       transcription,
-      summary,
+      summary: structuredOutput.meeting_summary,  // Extract for compatibility
       meetingId,
+      structuredData: structuredOutput,  // Include full structured data
     };
 
     console.log(`Meeting processed successfully. Meeting ID: ${meetingId}`);
@@ -66,13 +86,13 @@ router.post('/process', async (req: Request, res: Response) => {
     if (error.message.includes('Failed to generate')) {
       return res.status(502).json({
         error: 'AI service error',
-        message: 'Failed to generate meeting summary. Please try again.',
+        message: ERROR_MESSAGES.AI_SERVICE.GENERATION_FAILED,
       });
     }
 
     res.status(500).json({
       error: 'Internal server error',
-      message: 'An unexpected error occurred while processing the meeting',
+      message: ERROR_MESSAGES.SERVER.INTERNAL_ERROR,
     });
   }
 });
@@ -97,7 +117,7 @@ router.post('/save', async (req: Request, res: Response) => {
     if (!clientId || !meetingId || !meetingType || !summary || !transcription || !date) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'Missing required fields',
+        message: ERROR_MESSAGES.VALIDATION.MISSING_FIELDS,
       });
     }
 
@@ -129,7 +149,7 @@ router.post('/save', async (req: Request, res: Response) => {
 
     res.status(500).json({
       error: 'Internal server error',
-      message: 'An unexpected error occurred while saving the meeting note',
+      message: ERROR_MESSAGES.SERVER.INTERNAL_ERROR,
     });
   }
 });
@@ -146,7 +166,7 @@ router.post('/discovery-report', async (req: Request, res: Response) => {
     if (!clientId || !meetingId || !transcription) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'Missing required fields: clientId, meetingId, and transcription',
+        message: ERROR_MESSAGES.VALIDATION.MISSING_FIELDS + ': clientId, meetingId, and transcription',
       });
     }
 
@@ -170,13 +190,13 @@ router.post('/discovery-report', async (req: Request, res: Response) => {
     if (error.message.includes('Failed to generate')) {
       return res.status(502).json({
         error: 'AI service error',
-        message: 'Failed to generate discovery report. Please try again.',
+        message: ERROR_MESSAGES.AI_SERVICE.REPORT_FAILED,
       });
     }
 
     res.status(500).json({
       error: 'Internal server error',
-      message: 'An unexpected error occurred while generating the discovery report',
+      message: ERROR_MESSAGES.SERVER.INTERNAL_ERROR,
     });
   }
 });

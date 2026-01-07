@@ -5,21 +5,22 @@ import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import meetingsRouter from './routes/meetings.js';
+import { SERVER_CONFIG } from './config/constants.js';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || SERVER_CONFIG.DEFAULT_PORT;
 
 // Middleware
 app.use(
   cors({
-    origin: 'http://localhost:8080',
+    origin: SERVER_CONFIG.FRONTEND_ORIGIN,
     credentials: true,
   })
 );
 
 // Increase JSON limit to support large audio files in the future
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: SERVER_CONFIG.BODY_SIZE_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: SERVER_CONFIG.BODY_SIZE_LIMIT }));
 
 // Request logging middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -34,14 +35,14 @@ app.use('/api/meetings', meetingsRouter);
 app.get('/', (req: Request, res: Response) => {
   res.json({
     name: 'Fabric Backend API',
-    version: '1.0.0',
+    version: SERVER_CONFIG.API_VERSION,
     status: 'running',
     anthropicConfigured: !!process.env.ANTHROPIC_API_KEY,
     endpoints: {
       health: '/api/health',
       meetings: '/api/meetings',
     },
-    frontend: 'http://localhost:8080',
+    frontend: SERVER_CONFIG.FRONTEND_ORIGIN,
     timestamp: new Date().toISOString(),
   });
 });

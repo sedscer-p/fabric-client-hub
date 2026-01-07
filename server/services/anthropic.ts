@@ -4,6 +4,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { MeetingSummaryStructuredOutput } from '../types/index.js';
+import { ANTHROPIC_CONFIG, ERROR_MESSAGES, PROMPTS_CONFIG } from '../config/constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,41 +16,99 @@ const client = new Anthropic({
 });
 
 /**
- * Generate a meeting summary from a transcription using Claude
+ * Generate a meeting summary from a transcription using Claude with structured outputs
  * @param transcription - The meeting transcription text
- * @returns AI-generated summary (max 200 words)
+ * @returns Structured output with meeting_summary, adviser_actions, and client_actions
  */
-export async function generateSummary(transcription: string): Promise<string> {
-  console.log('Generating meeting summary with Claude API...');
+export async function generateSummary(transcription: string): Promise<MeetingSummaryStructuredOutput> {
+  console.log('Generating meeting summary with Claude API (structured outputs)...');
 
   try {
-    // Load prompt template
-    const promptPath = path.join(__dirname, '../../prompts/meeting-summary-prompt.txt');
+    // Load prompt template (used as system message)
+    const promptPath = path.join(__dirname, '../../', PROMPTS_CONFIG.MEETING_SUMMARY);
     const promptTemplate = await fs.readFile(promptPath, 'utf-8');
 
-    // Replace placeholder with actual transcription
-    const prompt = promptTemplate.replace('{meeting_transacription}', transcription);
+    // Define structured output schema
+    const schema = {
+      type: "object",
+      properties: {
+        meeting_summary: {
+          type: "string",
+          description: "A concise summary of the meeting with key discussion points"
+        },
+        adviser_actions: {
+          type: "array",
+          items: { type: "string" },
+          description: "Action items assigned to the financial adviser"
+        },
+        client_actions: {
+          type: "array",
+          items: { type: "string" },
+          description: "Action items assigned to the client"
+        }
+      },
+      required: ["meeting_summary", "adviser_actions", "client_actions"],
+      additionalProperties: false
+    };
 
-    // Call Claude API
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 1024,
+    // Call Claude API with structured outputs
+    const message = await client.beta.messages.create({
+      model: ANTHROPIC_CONFIG.MODEL,
+      max_tokens: ANTHROPIC_CONFIG.MAX_TOKENS.MEETING_SUMMARY,
+      betas: ANTHROPIC_CONFIG.BETA_FEATURES,
+      system: promptTemplate,  // Prompt as system message
       messages: [
         {
           role: 'user',
-          content: prompt,
-        },
+          content: transcription,  // Raw transcript as user message
+        }
       ],
+      output_format: {
+        type: 'json_schema',
+        schema: schema
+      }
     });
 
-    // Extract text from response
-    const summary = message.content[0].type === 'text' ? message.content[0].text : '';
+    // Check stop reason
+    if (message.stop_reason === 'refusal') {
+      console.error('Claude refused to process the request');
+      throw new Error(ERROR_MESSAGES.AI_SERVICE.REFUSAL);
+    }
 
-    console.log(`Summary generated successfully (${summary.length} characters)`);
+    if (message.stop_reason === 'max_tokens') {
+      console.warn('Response truncated due to token limit');
+      throw new Error(ERROR_MESSAGES.AI_SERVICE.TOKEN_LIMIT);
+    }
 
-    return summary;
+    // Extract and parse JSON response
+    const responseText = message.content[0].type === 'text'
+      ? message.content[0].text
+      : '';
+
+    if (!responseText) {
+      throw new Error('Empty response from Claude API');
+    }
+
+    // Parse JSON (guaranteed to be valid by structured outputs)
+    const structuredOutput: MeetingSummaryStructuredOutput = JSON.parse(responseText);
+
+    console.log(
+      `Summary generated successfully: ` +
+      `${structuredOutput.meeting_summary.length} chars, ` +
+      `${structuredOutput.adviser_actions.length} adviser actions, ` +
+      `${structuredOutput.client_actions.length} client actions`
+    );
+
+    return structuredOutput;
+
   } catch (error) {
     console.error('Error generating summary:', error);
+
+    // Enhanced error logging for debugging
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+    }
+
     throw new Error('Failed to generate meeting summary');
   }
 }
@@ -121,8 +181,8 @@ ${transcription}`,
     const results = await Promise.all(
       Object.entries(sections).map(async ([key, promptText]) => {
         const message = await client.messages.create({
-          model: 'claude-sonnet-4-5-20250929',
-          max_tokens: 800,
+          model: ANTHROPIC_CONFIG.MODEL,
+          max_tokens: ANTHROPIC_CONFIG.MAX_TOKENS.DISCOVERY_REPORT,
           messages: [
             {
               role: 'user',
