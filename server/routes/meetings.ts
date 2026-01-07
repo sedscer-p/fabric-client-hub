@@ -99,12 +99,13 @@ router.post('/process', async (req: Request, res: Response) => {
     const meetingId = randomUUID();
     const meetingDate = new Date().toISOString();
 
-    // Save action items to JSON files
+    // Save action items to JSON files in data_folder structure
     try {
       await saveMeetingActions(
         clientId,
         meetingId,
         meetingDate,
+        meetingType,
         structuredOutput.client_actions,
         structuredOutput.adviser_actions
       );

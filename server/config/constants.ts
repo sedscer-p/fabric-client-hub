@@ -45,14 +45,20 @@ export const SERVER_CONFIG = {
  * Settings for saving action items and meeting data
  */
 export const STORAGE_CONFIG = {
-  // Directory for action item JSON files (relative to project root)
-  DATA_DIRECTORY: 'src/data',
+  // Root data folder (relative to server root)
+  DATA_FOLDER: 'data_folder',
 
-  // File naming patterns
+  // File names for action items (saved in meeting folders)
   FILE_NAMES: {
-    CLIENT_ACTIONS: (clientId: string) => `client_actions_${clientId}.json`,
-    ADVISER_ACTIONS: (clientId: string) => `adviser_actions_${clientId}.json`,
+    CLIENT_ACTIONS: 'client_actions.json',
+    ADVISER_ACTIONS: 'adviser_actions.json',
   },
+
+  // Client ID to folder name mapping (shared with database service)
+  CLIENT_FOLDER_MAP: {
+    '1': 'sarah-mitchell',
+    'client-123': 'sarah-mitchell',
+  } as Record<string, string>,
 
   // JSON formatting
   JSON_INDENT: 2,
