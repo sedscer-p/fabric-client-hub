@@ -22,6 +22,7 @@ export interface ProcessMeetingResponse {
   transcription: string;
   summary: string;
   meetingId: string;
+  structuredData?: MeetingSummaryStructuredOutput;
 }
 
 export interface SaveMeetingRequest {
@@ -53,4 +54,28 @@ export interface DiscoveryReportResponse {
     capacityForLoss: string;
     financialObjectives: string;
   };
+}
+
+// Structured output from Claude API for meeting summaries
+export interface MeetingSummaryStructuredOutput {
+  meeting_summary: string;
+  adviser_actions: string[];
+  client_actions: string[];
+}
+
+// Action item for JSON file storage
+export interface ActionItem {
+  id: string;
+  text: string;
+  status: 'pending';
+  fromMeetingDate: string;
+  meetingId: string;
+}
+
+// JSON file format for client/adviser actions
+export interface ActionItemsFile {
+  clientId: string;
+  meetingId: string;
+  meetingDate: string;
+  actions: ActionItem[];
 }
