@@ -9,6 +9,9 @@ Pay particular attention to any comparisons between current circumstances and pr
 <output_structure>
 Generate a structured meeting summary with the following sections. Only include a section if relevant information was discussed in the transcript. If a section has no relevant content from the meeting, omit it entirely.
 
+## Meeting Metadata
+Extract if mentioned: Meeting Name, Meeting Date and time, Advisor name, Client Name (primary surname), Account Contacts (all client names), Participants with roles in brackets, and Date of previous review if referenced.
+
 ## Summary
 Provide 4-8 bullet points summarising the key topics covered. Each bullet should begin with an action verb (Discussed, Reviewed, Updated, Confirmed, Identified, Addressed), capture a distinct topic, and be concise but informative (1-2 sentences maximum).
 
@@ -69,7 +72,7 @@ Document concerns related to income stability, protection gaps, concentration ri
 
 <json_output>
 Your response will be returned as structured JSON with three fields:
-1. "meeting_summary" (string): The complete meeting summary text following all the sections described above (Summary, Changes Since Last Review, Progress Review, Current Financial Position, Recommendations Discussed, Soft Facts Update, Fees, Vulnerabilities). Format this as markdown text with proper headings and bullet points. DO NOT include Meeting Metadata - this is shown separately.
+1. "meeting_summary" (string): The complete meeting summary text following all the sections described above (Meeting Metadata, Summary, Changes Since Last Review, Progress Review, Current Financial Position, Recommendations Discussed, Soft Facts Update, Fees, Vulnerabilities). Format this as markdown text with proper headings and bullet points.
 2. "adviser_actions" (array of strings): A list of all actions assigned to the financial adviser. Each action should be a complete sentence with enough detail to complete it without additional context. Include any deadline or timeframe where stated.
 3. "client_actions" (array of strings): A list of all actions assigned to the client. Each action should be a complete sentence with enough detail to complete it without additional context. Include any deadline or timeframe where stated.
 
