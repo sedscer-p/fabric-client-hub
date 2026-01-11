@@ -24,21 +24,14 @@ const ai = new GoogleGenAI({
 /**
  * Generate a meeting summary from a transcription using Gemini with structured outputs
  * @param transcription - The meeting transcription text
- * @param meetingType - The type of meeting ('discovery', 'regular', or 'annual')
  * @returns Structured output with meeting_summary, adviser_actions, and client_actions
  */
-export async function generateSummary(transcription: string, meetingType: string = 'discovery'): Promise<MeetingSummaryStructuredOutput> {
-  console.log(`Generating meeting summary with Gemini API (structured outputs) for ${meetingType} meeting...`);
+export async function generateSummary(transcription: string): Promise<MeetingSummaryStructuredOutput> {
+  console.log('Generating meeting summary with Gemini API (structured outputs)...');
 
   try {
-    // Select prompt based on meeting type
-    // Use discovery prompt for 'discovery', regular prompt for 'regular' and 'annual'
-    const promptKey = meetingType.toLowerCase() === 'discovery'
-      ? PROMPTS_CONFIG.MEETING_SUMMARY_DISCOVERY
-      : PROMPTS_CONFIG.MEETING_SUMMARY_REGULAR;
-
     // Load prompt template (used as system instruction)
-    const promptPath = path.join(__dirname, '../../', promptKey);
+    const promptPath = path.join(__dirname, '../../', PROMPTS_CONFIG.MEETING_SUMMARY);
     const systemInstruction = await fs.readFile(promptPath, 'utf-8');
 
     // Define structured output schema

@@ -56,23 +56,17 @@ export type ViewType = 'documentation' | 'meeting-notes' | 'meeting-prep' | 'sta
 export const clients: Client[] = [
   {
     id: '1',
-    name: 'Rebecca Flemming',
+    name: 'Sarah Mitchell',
     advisor: 'James Thompson',
     lastMeetingDate: '2024-12-15',
-    email: 'rebecca.flemming@email.com',
-  },
-  {
-    id: '2',
-    name: 'James Francis',
-    advisor: 'James Thompson',
-    lastMeetingDate: '2024-12-10',
-    email: 'james.francis@email.com',
+    email: 'sarah.mitchell@email.com',
   },
 ];
 
 export const meetingTypes = [
   { id: 'discovery', label: 'Discovery Meeting' },
   { id: 'regular', label: 'Regular Review' },
+  { id: 'annual', label: 'Annual Review' },
 ];
 
 export const clientDocumentation: Record<string, ClientDocumentation> = {

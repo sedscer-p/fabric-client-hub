@@ -10,8 +10,6 @@ interface MeetingSummaryEmailParams {
   summary: string;
   transcription?: string;
   includeTranscription: boolean;
-  advisorActions?: string[];
-  clientActions?: string[];
 }
 
 interface DiscoveryReportEmailParams {
@@ -38,8 +36,6 @@ export function generateMeetingSummaryEmail(params: MeetingSummaryEmailParams): 
     summary,
     transcription,
     includeTranscription,
-    advisorActions = [],
-    clientActions = [],
   } = params;
 
   const formattedDate = new Date(meetingDate).toLocaleDateString('en-US', {
@@ -48,99 +44,11 @@ export function generateMeetingSummaryEmail(params: MeetingSummaryEmailParams): 
     day: 'numeric',
   });
 
-  // Convert markdown summary to HTML with proper list grouping
-  const lines = summary.split('\n');
-  const htmlParts: string[] = [];
-  let inList = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const nextLine = i < lines.length - 1 ? lines[i + 1] : '';
-    const prevLine = i > 0 ? lines[i - 1] : '';
-
-    // Handle markdown headings (## Heading)
-    if (line.startsWith('### ')) {
-      if (inList) {
-        htmlParts.push('</ul>');
-        inList = false;
-      }
-      const text = line.substring(4);
-      htmlParts.push(`<h4 style="margin: 20px 0 12px 0; color: #374151; font-size: 15px; font-weight: 600;">${text}</h4>`);
-    } else if (line.startsWith('## ')) {
-      if (inList) {
-        htmlParts.push('</ul>');
-        inList = false;
-      }
-      const text = line.substring(3);
-      htmlParts.push(`<h3 style="margin: 24px 0 12px 0; color: #1a1a1a; font-size: 16px; font-weight: 600;">${text}</h3>`);
-    }
-    // Handle bullet points (- item or * item)
-    else if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
-      if (!inList) {
-        htmlParts.push('<ul style="margin: 8px 0; padding-left: 24px;">');
-        inList = true;
-      }
-      const text = line.trim().substring(2);
-      // Convert **bold** to <strong>
-      const formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      htmlParts.push(`<li style="margin: 6px 0; line-height: 1.6; color: #374151;">${formatted}</li>`);
-
-      // Close list if next line is not a bullet
-      if (!nextLine.trim().startsWith('- ') && !nextLine.trim().startsWith('* ')) {
-        htmlParts.push('</ul>');
-        inList = false;
-      }
-    }
-    // Handle empty lines
-    else if (line.trim() === '') {
-      if (inList) {
-        htmlParts.push('</ul>');
-        inList = false;
-      }
-      htmlParts.push('<div style="height: 8px;"></div>');
-    }
-    // Regular paragraphs - convert **bold** to <strong>
-    else {
-      if (inList) {
-        htmlParts.push('</ul>');
-        inList = false;
-      }
-      const formatted = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      htmlParts.push(`<p style="margin: 8px 0; line-height: 1.6; color: #374151;">${formatted}</p>`);
-    }
-  }
-
-  // Close any open list
-  if (inList) {
-    htmlParts.push('</ul>');
-  }
-
-  const summaryHtml = htmlParts.join('');
-
-  // Generate actions section HTML
-  const actionsSection = (advisorActions.length > 0 || clientActions.length > 0)
-    ? `
-    <div style="margin-top: 32px; padding: 24px; background-color: #f0f9ff; border-left: 4px solid #667eea; border-radius: 8px;">
-      <h3 style="margin: 0 0 16px 0; color: #1a1a1a; font-size: 18px; font-weight: 600;">Action Items</h3>
-      ${advisorActions.length > 0 ? `
-        <div style="margin-bottom: 20px;">
-          <h4 style="margin: 0 0 12px 0; color: #667eea; font-size: 16px; font-weight: 600;">Advisor Actions</h4>
-          <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px; line-height: 1.8;">
-            ${advisorActions.map(action => `<li style="margin-bottom: 8px;">${action}</li>`).join('')}
-          </ul>
-        </div>
-      ` : ''}
-      ${clientActions.length > 0 ? `
-        <div>
-          <h4 style="margin: 0 0 12px 0; color: #667eea; font-size: 16px; font-weight: 600;">Client Actions</h4>
-          <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px; line-height: 1.8;">
-            ${clientActions.map(action => `<li style="margin-bottom: 8px;">${action}</li>`).join('')}
-          </ul>
-        </div>
-      ` : ''}
-    </div>
-    `
-    : '';
+  // Convert summary paragraphs to HTML
+  const summaryHtml = summary
+    .split('\n\n')
+    .map((paragraph) => `<p style="margin: 0 0 16px 0; line-height: 1.6;">${paragraph}</p>`)
+    .join('');
 
   const transcriptionSection = includeTranscription && transcription
     ? `
@@ -199,8 +107,6 @@ export function generateMeetingSummaryEmail(params: MeetingSummaryEmailParams): 
               ${summaryHtml}
             </div>
           </div>
-
-          ${actionsSection}
 
           ${transcriptionSection}
         </div>
@@ -321,8 +227,6 @@ export function generateMeetingSummaryPlainText(params: MeetingSummaryEmailParam
     summary,
     transcription,
     includeTranscription,
-    advisorActions = [],
-    clientActions = [],
   } = params;
 
   const formattedDate = new Date(meetingDate).toLocaleDateString('en-US', {
@@ -330,13 +234,6 @@ export function generateMeetingSummaryPlainText(params: MeetingSummaryEmailParam
     month: 'long',
     day: 'numeric',
   });
-
-  // Clean markdown from plain text summary
-  const cleanSummary = summary
-    .replace(/###\s+/g, '')  // Remove ### headings
-    .replace(/##\s+/g, '')   // Remove ## headings
-    .replace(/\*\*(.*?)\*\*/g, '$1')  // Remove **bold** markers
-    .trim();
 
   let plainText = `
 MEETING SUMMARY
@@ -349,35 +246,8 @@ Advisor: ${advisorName}
 
 SUMMARY
 -------
-${cleanSummary}
+${summary}
 `;
-
-  // Add actions section if there are any actions
-  if (advisorActions.length > 0 || clientActions.length > 0) {
-    plainText += `
-
-ACTION ITEMS
-------------
-`;
-
-    if (advisorActions.length > 0) {
-      plainText += `
-Advisor Actions:
-`;
-      advisorActions.forEach((action, index) => {
-        plainText += `  ${index + 1}. ${action}\n`;
-      });
-    }
-
-    if (clientActions.length > 0) {
-      plainText += `
-Client Actions:
-`;
-      clientActions.forEach((action, index) => {
-        plainText += `  ${index + 1}. ${action}\n`;
-      });
-    }
-  }
 
   if (includeTranscription && transcription) {
     plainText += `

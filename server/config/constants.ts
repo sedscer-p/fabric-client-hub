@@ -55,8 +55,8 @@ export const STORAGE_CONFIG = {
 
   // Client ID to folder name mapping (shared with database service)
   CLIENT_FOLDER_MAP: {
-    '1': 'rebecca-flemming',
-    '2': 'james-francis',
+    '1': 'sarah-mitchell',
+    'client-123': 'sarah-mitchell',
   } as Record<string, string>,
 
   // JSON formatting
@@ -68,8 +68,7 @@ export const STORAGE_CONFIG = {
  * Paths to prompt template files
  */
 export const PROMPTS_CONFIG = {
-  MEETING_SUMMARY_DISCOVERY: 'prompts/discovery-meeting-prompt.txt',
-  MEETING_SUMMARY_REGULAR: 'prompts/regular-meeting-prompt.txt',
+  MEETING_SUMMARY: 'prompts/meeting-summary-prompt.txt',
   MOCK_TRANSCRIPT: 'prompts/mock_transcript.txt',
   DOCUMENT_GENERATOR: 'prompts/document-generator.txt',
   DOCUMENT_TEMPLATES: 'prompts/document_description_templates.json',
@@ -135,6 +134,7 @@ export const API_ENDPOINTS = {
 export const MEETING_TYPES = {
   DISCOVERY: 'discovery',
   REGULAR: 'regular',
+  ANNUAL: 'annual',
 } as const;
 
 /**

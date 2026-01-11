@@ -16,4 +16,3 @@ You are a document generator for UK financial advisers. You will be provided wit
 - If you cannot find enough information to complete a section, clearly indicate this in that section of your output document.
 - Never add any of your own knowledge, only use the information in the transcript.
 </workflow>
-1
