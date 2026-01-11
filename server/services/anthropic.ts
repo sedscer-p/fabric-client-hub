@@ -18,14 +18,21 @@ const client = new Anthropic({
 /**
  * Generate a meeting summary from a transcription using Claude with structured outputs
  * @param transcription - The meeting transcription text
+ * @param meetingType - The type of meeting ('discovery', 'regular', or 'annual')
  * @returns Structured output with meeting_summary, adviser_actions, and client_actions
  */
-export async function generateSummary(transcription: string): Promise<MeetingSummaryStructuredOutput> {
-  console.log('Generating meeting summary with Claude API (structured outputs)...');
+export async function generateSummary(transcription: string, meetingType: string = 'discovery'): Promise<MeetingSummaryStructuredOutput> {
+  console.log(`Generating meeting summary with Claude API (structured outputs) for ${meetingType} meeting...`);
 
   try {
+    // Select prompt based on meeting type
+    // Use discovery prompt for 'discovery', regular prompt for 'regular' and 'annual'
+    const promptKey = meetingType.toLowerCase() === 'discovery'
+      ? PROMPTS_CONFIG.MEETING_SUMMARY_DISCOVERY
+      : PROMPTS_CONFIG.MEETING_SUMMARY_REGULAR;
+
     // Load prompt template (used as system message)
-    const promptPath = path.join(__dirname, '../../', PROMPTS_CONFIG.MEETING_SUMMARY);
+    const promptPath = path.join(__dirname, '../../', promptKey);
     const promptTemplate = await fs.readFile(promptPath, 'utf-8');
 
     // Define structured output schema

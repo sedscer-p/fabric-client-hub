@@ -26,6 +26,8 @@ interface SendMeetingSummaryEmailOptions {
   summary: string;
   transcription?: string;
   includeTranscription?: boolean;
+  advisorActions?: string[];
+  clientActions?: string[];
 }
 
 interface SendDiscoveryReportEmailOptions {
@@ -68,6 +70,8 @@ export async function sendMeetingSummaryEmail(
       summary,
       transcription,
       includeTranscription = false,
+      advisorActions = [],
+      clientActions = [],
     } = options;
 
     // Validate email address
@@ -87,6 +91,8 @@ export async function sendMeetingSummaryEmail(
       summary,
       transcription,
       includeTranscription,
+      advisorActions,
+      clientActions,
     });
 
     const text = generateMeetingSummaryPlainText({
@@ -97,6 +103,8 @@ export async function sendMeetingSummaryEmail(
       summary,
       transcription,
       includeTranscription,
+      advisorActions,
+      clientActions,
     });
 
     const subject = `Meeting Summary - ${meetingType} - ${new Date(meetingDate).toLocaleDateString('en-US', {

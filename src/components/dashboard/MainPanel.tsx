@@ -13,11 +13,11 @@ interface MainPanelProps {
   meetingType: string;
   selectedMeetingType: string;
   onMeetingTypeChange: (type: string) => void;
+  selectedTranscript: string;
+  onTranscriptChange: (transcript: string) => void;
   onStartRecording: () => void;
   onStopRecording: () => void;
   onAcceptSummary: () => void;
-  onGenerateDiscoveryReport?: () => void;
-  onSkipReport?: () => void;
   meetingSummary: string;
   clientMeetingNotes: Record<string, MeetingNote[]>;
   meetingId?: string;
@@ -25,10 +25,6 @@ interface MainPanelProps {
   transcription?: string;
   summaryAccepted: boolean;
   onSummaryAcceptedChange: (accepted: boolean) => void;
-  generatedDoc: string | null;
-  onGeneratedDocChange: (doc: string | null) => void;
-  selectedDocType: string;
-  onSelectedDocTypeChange: (type: string) => void;
 }
 
 export function MainPanel({
@@ -38,11 +34,11 @@ export function MainPanel({
   meetingType,
   selectedMeetingType,
   onMeetingTypeChange,
+  selectedTranscript,
+  onTranscriptChange,
   onStartRecording,
   onStopRecording,
   onAcceptSummary,
-  onGenerateDiscoveryReport,
-  onSkipReport,
   meetingSummary,
   clientMeetingNotes,
   meetingId,
@@ -50,10 +46,6 @@ export function MainPanel({
   transcription,
   summaryAccepted,
   onSummaryAcceptedChange,
-  generatedDoc,
-  onGeneratedDocChange,
-  selectedDocType,
-  onSelectedDocTypeChange
 }: MainPanelProps) {
   const isMeetingActive = recordingState !== 'idle';
 
@@ -87,8 +79,11 @@ export function MainPanel({
         {activeView === 'meeting-prep' && <MeetingPrepView clientId={client.id} />}
         {activeView === 'start-meeting' && !isMeetingActive && (
           <StartMeetingView
+            clientId={client.id}
             selectedMeetingType={selectedMeetingType}
             onMeetingTypeChange={onMeetingTypeChange}
+            selectedTranscript={selectedTranscript}
+            onTranscriptChange={onTranscriptChange}
             onStartRecording={onStartRecording}
           />
         )}
@@ -99,8 +94,6 @@ export function MainPanel({
             meetingTypeId={selectedMeetingType}
             onStopRecording={onStopRecording}
             onAcceptSummary={onAcceptSummary}
-            onGenerateDiscoveryReport={onGenerateDiscoveryReport}
-            onSkipReport={onSkipReport}
             meetingSummary={meetingSummary}
             clientId={client.id}
             clientName={client.name}
@@ -111,10 +104,6 @@ export function MainPanel({
             transcription={transcription}
             summaryAccepted={summaryAccepted}
             onSummaryAcceptedChange={onSummaryAcceptedChange}
-            generatedDoc={generatedDoc}
-            onGeneratedDocChange={onGeneratedDocChange}
-            selectedDocType={selectedDocType}
-            onSelectedDocTypeChange={onSelectedDocTypeChange}
           />
         )}
       </div>
