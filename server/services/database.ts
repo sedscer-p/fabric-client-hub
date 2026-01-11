@@ -308,11 +308,6 @@ export async function getMeetingNotes(clientId: string): Promise<MeetingNote[]> 
         reports: reports.length > 0 ? reports : undefined,
       });
     } catch (error) {
-      // Skip folders without metadata.json (incomplete meeting folders)
-      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-        continue;
-      }
-      // Log other errors (e.g., JSON parse errors, permission issues)
       console.warn(`Failed to read meeting folder ${folder}:`, error);
     }
   }
