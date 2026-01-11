@@ -93,8 +93,8 @@ router.post('/process', async (req: Request, res: Response) => {
     const transcriptPath = path.join(__dirname, '../../', PROMPTS_CONFIG.MOCK_TRANSCRIPT);
     const transcription = await fs.readFile(transcriptPath, 'utf-8');
 
-    // Generate AI summary with structured outputs
-    const structuredOutput = await generateSummary(transcription);
+    // Generate AI summary with structured outputs (pass meeting type)
+    const structuredOutput = await generateSummary(transcription, meetingType);
 
     // Generate unique meeting ID and date
     const meetingId = randomUUID();

@@ -66,7 +66,6 @@ export const clients: Client[] = [
 export const meetingTypes = [
   { id: 'discovery', label: 'Discovery Meeting' },
   { id: 'regular', label: 'Regular Review' },
-  { id: 'annual', label: 'Annual Review' },
 ];
 
 export const clientDocumentation: Record<string, ClientDocumentation> = {
