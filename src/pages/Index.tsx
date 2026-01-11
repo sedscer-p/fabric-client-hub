@@ -3,13 +3,12 @@ import { Sidebar } from '@/components/dashboard/Sidebar';
 import { MainPanel } from '@/components/dashboard/MainPanel';
 import { Client, ViewType, meetingTypes, MeetingNote } from '@/data/mockData';
 import { RecordingState } from '@/components/dashboard/RecordingOverlay';
-import { processMeeting, saveMeetingNote, getAllMeetings, ActionItem } from '@/services/api';
+import { processMeeting, saveMeetingNote, generateDiscoveryReport, getAllMeetings, ActionItem } from '@/services/api';
 
 const Index = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [activeView, setActiveView] = useState<ViewType>('meeting-notes');
   const [selectedMeetingType, setSelectedMeetingType] = useState<string>('');
-  const [selectedTranscript, setSelectedTranscript] = useState<string>('');
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
   const [meetingSummary, setMeetingSummary] = useState<string>('');
   const [transcription, setTranscription] = useState<string>('');
@@ -20,6 +19,8 @@ const Index = () => {
   const [advisorActions, setAdvisorActions] = useState<ActionItem[]>([]);
   const [meetingDate, setMeetingDate] = useState<string>('');
   const [summaryAccepted, setSummaryAccepted] = useState(false);
+  const [generatedDoc, setGeneratedDoc] = useState<string | null>(null);
+  const [selectedDocType, setSelectedDocType] = useState('discovery_document');
 
   // Load existing meetings on component mount
   useEffect(() => {
@@ -41,6 +42,7 @@ const Index = () => {
     setRecordingState('recording');
     setMeetingSummary('');
     setSummaryAccepted(false);
+    setGeneratedDoc(null);
   };
 
   const handleStopRecording = async () => {
@@ -54,7 +56,6 @@ const Index = () => {
       const result = await processMeeting({
         clientId: selectedClient.id,
         meetingType: selectedMeetingType,
-        transcriptFile: selectedTranscript,
         duration: 180, // Recording duration in seconds (mock value)
       });
 
@@ -87,6 +88,7 @@ const Index = () => {
       setProcessingError(error.message || 'Failed to process meeting');
       setRecordingState('idle');
       setSummaryAccepted(false);
+      setGeneratedDoc(null);
       // TODO: Show error toast notification
     }
   };
@@ -128,18 +130,75 @@ const Index = () => {
 
       console.log('Meeting note saved successfully');
 
-      // Reset state and navigate
+      // If not a discovery meeting, reset and navigate
+      if (selectedMeetingType !== 'discovery') {
+        setRecordingState('idle');
+        setMeetingSummary('');
+        setTranscription('');
+        setMeetingId('');
+        setSelectedMeetingType('');
+        setActiveView('meeting-notes');
+        setSummaryAccepted(false);
+        setGeneratedDoc(null);
+      } else {
+        setSummaryAccepted(true);
+      }
+      // For discovery meetings, keep state and show report option
+    } catch (error: any) {
+      console.error('Failed to save meeting:', error);
+      // TODO: Show error toast notification
+    }
+  };
+
+  const handleGenerateDiscoveryReport = async () => {
+    if (!selectedClient || !meetingId) return;
+
+    try {
+      const meetingTypeLabel = meetingTypes.find(t => t.id === selectedMeetingType)?.label || selectedMeetingType;
+      const meetingDate = clientMeetingNotes[selectedClient.id]?.[0]?.date || new Date().toISOString();
+
+      await generateDiscoveryReport({
+        clientId: selectedClient.id,
+        meetingId: meetingId,
+        transcription: transcription,
+        meetingDate: meetingDate,
+        meetingType: meetingTypeLabel,
+      });
+
+      console.log('Discovery report generated successfully');
+      // TODO: Navigate to discovery report view or show success message
+
+      // Reset state and navigate to meeting-notes view
       setRecordingState('idle');
       setMeetingSummary('');
       setTranscription('');
       setMeetingId('');
       setSelectedMeetingType('');
       setActiveView('meeting-notes');
-      setSummaryAccepted(false);
     } catch (error: any) {
-      console.error('Failed to save meeting:', error);
+      console.error('Failed to generate discovery report:', error);
       // TODO: Show error toast notification
     }
+  };
+
+  const handleSkipReport = async () => {
+    // Refresh meetings to include any newly generated reports
+    try {
+      const response = await getAllMeetings();
+      setClientMeetingNotes(response.meetingNotes);
+    } catch (error) {
+      console.error('Failed to refresh meetings:', error);
+    }
+
+    // Meeting already saved, just reset state and navigate
+    setRecordingState('idle');
+    setMeetingSummary('');
+    setTranscription('');
+    setMeetingId('');
+    setSelectedMeetingType('');
+    setSummaryAccepted(false);
+    setGeneratedDoc(null);
+    setActiveView('meeting-notes');
   };
 
   const handleClientSelect = (client: Client | null) => {
@@ -149,6 +208,7 @@ const Index = () => {
       setMeetingSummary('');
       setSelectedMeetingType('');
       setSummaryAccepted(false);
+      setGeneratedDoc(null);
     }
     setSelectedClient(client);
     setActiveView('meeting-notes');
@@ -179,11 +239,11 @@ const Index = () => {
           meetingType={getMeetingTypeLabel()}
           selectedMeetingType={selectedMeetingType}
           onMeetingTypeChange={setSelectedMeetingType}
-          selectedTranscript={selectedTranscript}
-          onTranscriptChange={setSelectedTranscript}
           onStartRecording={handleStartRecording}
           onStopRecording={handleStopRecording}
           onAcceptSummary={handleAcceptSummary}
+          onGenerateDiscoveryReport={handleGenerateDiscoveryReport}
+          onSkipReport={handleSkipReport}
           meetingSummary={meetingSummary}
           clientMeetingNotes={clientMeetingNotes}
           meetingId={meetingId}
@@ -191,6 +251,10 @@ const Index = () => {
           transcription={transcription}
           summaryAccepted={summaryAccepted}
           onSummaryAcceptedChange={setSummaryAccepted}
+          generatedDoc={generatedDoc}
+          onGeneratedDocChange={setGeneratedDoc}
+          selectedDocType={selectedDocType}
+          onSelectedDocTypeChange={setSelectedDocType}
         />
       </div>
     </div>
