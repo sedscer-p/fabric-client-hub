@@ -5,6 +5,7 @@ const API_BASE = 'http://localhost:3001';
 export interface ProcessMeetingRequest {
   clientId: string;
   meetingType: string;
+  transcriptFile: string;
   duration: number;
 }
 

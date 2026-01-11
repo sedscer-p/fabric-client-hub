@@ -25,7 +25,8 @@ export interface MeetingNote {
 
 export interface ProcessMeetingRequest {
   clientId: string;
-  meetingType: string; // 'discovery' | 'regular' | 'annual'
+  meetingType: string; // 'discovery' | 'regular'
+  transcriptFile: string; // Transcript filename without extension (e.g., 'rebecca-flemming-discovery-meeting')
   duration: number;    // Recording duration in seconds
 }
 
