@@ -55,8 +55,8 @@ export const STORAGE_CONFIG = {
 
   // Client ID to folder name mapping (shared with database service)
   CLIENT_FOLDER_MAP: {
-    '1': 'rebecca-flemming',
-    '2': 'james-francis',
+    '1': 'sarah-mitchell',
+    'client-123': 'sarah-mitchell',
   } as Record<string, string>,
 
   // JSON formatting

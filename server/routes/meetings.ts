@@ -77,20 +77,20 @@ router.get('/:clientId', async (req: Request, res: Response) => {
  */
 router.post('/process', async (req: Request, res: Response) => {
   try {
-    const { clientId, meetingType, transcriptFile, duration }: ProcessMeetingRequest = req.body;
+    const { clientId, meetingType, duration }: ProcessMeetingRequest = req.body;
 
     // Validate request
-    if (!clientId || !meetingType || !transcriptFile) {
+    if (!clientId || !meetingType) {
       return res.status(400).json({
         error: 'Validation error',
-        message: ERROR_MESSAGES.VALIDATION.MISSING_FIELDS + ': clientId, meetingType, and transcriptFile',
+        message: ERROR_MESSAGES.VALIDATION.MISSING_FIELDS + ': clientId and meetingType',
       });
     }
 
-    console.log(`Processing meeting for client ${clientId}, type: ${meetingType}, transcript: ${transcriptFile}`);
+    console.log(`Processing meeting for client ${clientId}, type: ${meetingType}`);
 
-    // Load selected transcript from transcripts folder
-    const transcriptPath = path.join(__dirname, '../../transcripts', `${transcriptFile}.txt`);
+    // Load mock transcript
+    const transcriptPath = path.join(__dirname, '../../', PROMPTS_CONFIG.MOCK_TRANSCRIPT);
     const transcription = await fs.readFile(transcriptPath, 'utf-8');
 
     // Generate AI summary with structured outputs (pass meeting type)
@@ -428,8 +428,6 @@ router.post('/:clientId/:meetingId/send-email', async (req: Request, res: Respon
         summary: meetingNote.summary,
         transcription: meetingNote.transcription,
         includeTranscription,
-        advisorActions: meetingNote.advisorActions?.map(action => action.text) || [],
-        clientActions: meetingNote.clientActions?.map(action => action.text) || [],
       });
     }
 

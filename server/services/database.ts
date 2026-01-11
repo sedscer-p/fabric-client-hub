@@ -19,8 +19,8 @@ const DATA_FOLDER = path.join(__dirname, '../../data_folder');
 function getClientFolderName(clientId: string): string {
   // Map known client IDs to folder names
   const clientFolderMap: Record<string, string> = {
-    '1': 'rebecca-flemming',
-    '2': 'james-francis',
+    '1': 'sarah-mitchell',
+    'client-123': 'sarah-mitchell',
   };
 
   // Return mapped name if it exists
@@ -245,11 +245,6 @@ export async function getMeetingNotes(clientId: string): Promise<MeetingNote[]> 
   const notes: MeetingNote[] = [];
 
   for (const folder of folders) {
-    // Skip .gitkeep and other hidden files
-    if (folder.startsWith('.')) {
-      continue;
-    }
-
     const metadataPath = path.join(clientPath, folder, 'metadata.json');
     try {
       const metadataContent = await fs.readFile(metadataPath, 'utf-8');
@@ -330,8 +325,7 @@ export async function getAllMeetingNotes(): Promise<Record<string, MeetingNote[]
 
     // Reverse mapping from folder names to client IDs
     const folderToClientMap: Record<string, string> = {
-      'rebecca-flemming': '1',
-      'james-francis': '2',
+      'sarah-mitchell': '1',
     };
 
     for (const clientFolder of clients) {
