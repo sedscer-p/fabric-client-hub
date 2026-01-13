@@ -134,13 +134,13 @@ router.post('/process', async (req: Request, res: Response) => {
     if (error.message.includes('Failed to generate')) {
       return res.status(502).json({
         error: 'AI service error',
-        message: ERROR_MESSAGES.AI_SERVICE.GENERATION_FAILED,
+        message: error.message || ERROR_MESSAGES.AI_SERVICE.GENERATION_FAILED,
       });
     }
 
     res.status(500).json({
       error: 'Internal server error',
-      message: ERROR_MESSAGES.SERVER.INTERNAL_ERROR,
+      message: error.message || ERROR_MESSAGES.SERVER.INTERNAL_ERROR,
     });
   }
 });
