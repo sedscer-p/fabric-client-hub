@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Sidebar } from '@/components/dashboard/Sidebar';
-import { MainPanel } from '@/components/dashboard/MainPanel';
-import { Client, ViewType, meetingTypes, MeetingNote } from '@/data/mockData';
-import { RecordingState } from '@/components/dashboard/RecordingOverlay';
+import { BottomNav } from '@/components/dashboard/BottomNav';
+import { HomePage } from '@/components/dashboard/HomePage';
+import { SettingsPage } from '@/components/dashboard/SettingsPage';
+import { MeetingNotesView } from '@/components/dashboard/MeetingNotesView';
+import { StartMeetingView } from '@/components/dashboard/StartMeetingView';
+import { RecordingOverlay, RecordingState } from '@/components/dashboard/RecordingOverlay';
+import { Client, ViewType, meetingTypes, MeetingNote, clients } from '@/data/mockData';
 import { processMeeting, saveMeetingNote, getAllMeetings, ActionItem } from '@/services/api';
 import { toast } from 'sonner';
+import { Logo } from '@/components/Logo';
 
 const Index = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [activeView, setActiveView] = useState<ViewType>('meeting-notes');
+  const [activeView, setActiveView] = useState<ViewType>('home');
   const [selectedMeetingType, setSelectedMeetingType] = useState<string>('');
   const [selectedTranscript, setSelectedTranscript] = useState<string>('');
   const [recordingState, setRecordingState] = useState<RecordingState>('idle');
@@ -144,17 +148,6 @@ const Index = () => {
     }
   };
 
-  const handleClientSelect = (client: Client | null) => {
-    // If changing client during active meeting, reset everything
-    if (recordingState !== 'idle' && client?.id !== selectedClient?.id) {
-      setRecordingState('idle');
-      setMeetingSummary('');
-      setSelectedMeetingType('');
-      setSummaryAccepted(false);
-    }
-    setSelectedClient(client);
-    setActiveView('meeting-notes');
-  };
 
   const getMeetingTypeLabel = () => {
     return meetingTypes.find(t => t.id === selectedMeetingType)?.label || '';
@@ -162,39 +155,137 @@ const Index = () => {
 
   const isMeetingActive = recordingState !== 'idle';
 
-  return (
-    <div className="flex min-h-screen w-full bg-background">
-      <Sidebar
-        selectedClient={selectedClient}
-        onClientSelect={handleClientSelect}
-        activeView={activeView}
-        onViewChange={setActiveView}
-        selectedMeetingType={selectedMeetingType}
-        recordingState={recordingState}
-        isMeetingActive={isMeetingActive}
-      />
-      <div className="ml-[260px] flex-1">
-        <MainPanel
-          client={selectedClient}
-          activeView={activeView}
-          recordingState={recordingState}
+  const handleClientSelect = (clientId: string) => {
+    const client = clients.find(c => c.id === clientId);
+    if (client) {
+      setSelectedClient(client);
+      setActiveView('meeting-notes');
+    }
+  };
+
+  const renderView = () => {
+    // Show client selection if no client selected
+    if (!selectedClient) {
+      return <HomePage onClientSelect={handleClientSelect} />;
+    }
+
+    // Show recording overlay if meeting is active
+    if (isMeetingActive) {
+      return (
+        <RecordingOverlay
+          state={recordingState}
           meetingType={getMeetingTypeLabel()}
-          selectedMeetingType={selectedMeetingType}
-          onMeetingTypeChange={setSelectedMeetingType}
-          selectedTranscript={selectedTranscript}
-          onTranscriptChange={setSelectedTranscript}
-          onStartRecording={handleStartRecording}
+          meetingTypeId={selectedMeetingType}
           onStopRecording={handleStopRecording}
           onAcceptSummary={handleAcceptSummary}
           meetingSummary={meetingSummary}
-          clientMeetingNotes={clientMeetingNotes}
+          clientId={selectedClient.id}
+          clientName={selectedClient.name}
+          clientEmail={selectedClient.email}
+          advisorName={selectedClient.advisor}
           meetingId={meetingId}
           meetingDate={meetingDate}
           transcription={transcription}
           summaryAccepted={summaryAccepted}
           onSummaryAcceptedChange={setSummaryAccepted}
         />
+      );
+    }
+
+    // Render view based on active tab
+    switch (activeView) {
+      case 'home':
+        return <HomePage onClientSelect={handleClientSelect} />;
+      case 'meeting-notes':
+        return (
+          <>
+            <MeetingNotesView
+              clientId={selectedClient.id}
+              meetingNotes={clientMeetingNotes[selectedClient.id] || []}
+              clientName={selectedClient.name}
+              clientEmail={selectedClient.email}
+              advisorName={selectedClient.advisor}
+            />
+            <div className="fixed bottom-20 right-6 text-xs text-gray-300 font-mono pointer-events-none">
+              v0.1
+            </div>
+          </>
+        );
+      case 'start-meeting':
+        return (
+          <>
+            <StartMeetingView
+              clientId={selectedClient.id}
+              selectedMeetingType={selectedMeetingType}
+              onMeetingTypeChange={setSelectedMeetingType}
+              selectedTranscript={selectedTranscript}
+              onTranscriptChange={setSelectedTranscript}
+              onStartRecording={handleStartRecording}
+            />
+            <div className="fixed bottom-20 right-6 text-xs text-gray-300 font-mono pointer-events-none">
+              v0.1
+            </div>
+          </>
+        );
+      case 'settings':
+        return (
+          <>
+            <SettingsPage />
+            <div className="fixed bottom-20 right-6 text-xs text-gray-300 font-mono pointer-events-none">
+              v0.1
+            </div>
+          </>
+        );
+      default:
+        return <HomePage onClientSelect={handleClientSelect} />;
+    }
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen w-full bg-offwhite max-w-md mx-auto">
+      {/* Header with Logo and Client Context */}
+      {selectedClient ? (
+        <div className="px-6 pt-6 pb-4 bg-white border-b border-gold/20">
+          <div className="flex items-center gap-3">
+            <Logo className="h-10 w-10" />
+            <div>
+              <div className="text-xs text-gold font-semibold tracking-wide">CLIENT SELECTED</div>
+              <div className="text-lg font-serif font-bold text-navy">{selectedClient.name}</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="px-6 pt-6 pb-4 bg-white border-b border-gold/20">
+          <div className="flex items-center gap-3">
+            <Logo className="h-10 w-10" />
+            <div>
+              <div className="text-xs text-gold font-semibold tracking-wide">FABRIC AI</div>
+              <div className="text-lg font-serif font-bold text-navy">Client Hub</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        {renderView()}
       </div>
+
+      {/* Bottom Navigation - Only show if client is selected */}
+      {selectedClient && (
+        <BottomNav
+          activeTab={activeView}
+          onTabChange={(tab) => {
+            if (tab === 'home') {
+              // Reset client selection and go to home
+              setSelectedClient(null);
+              setActiveView('home');
+            } else {
+              setActiveView(tab as ViewType);
+            }
+          }}
+        />
+      )}
     </div>
   );
 };

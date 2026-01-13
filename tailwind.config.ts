@@ -15,8 +15,20 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['Playfair Display', 'Georgia', 'Times New Roman', 'serif'],
       },
       colors: {
+        // Premium Financial Brand Colors
+        navy: {
+          DEFAULT: '#1A2B3C',
+          dark: '#0F1920',
+        },
+        gold: {
+          DEFAULT: '#C5A059',
+          light: '#D4B36A',
+          dark: '#B08F48',
+        },
+        offwhite: '#FAF9F6',
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

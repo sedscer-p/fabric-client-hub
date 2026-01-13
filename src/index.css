@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@400;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,28 +6,28 @@
 
 @layer base {
   :root {
-    /* Core palette - ProcessWise minimal design */
-    --background: 0 0% 98%;          /* #FAFAFA */
-    --foreground: 240 6% 10%;        /* #18181B */
+    /* Premium Financial Brand - Navy & Gold */
+    --background: 35 20% 98%;        /* #FAF9F6 Off-white */
+    --foreground: 207 37% 17%;       /* #1A2B3C Navy */
 
     --card: 0 0% 100%;               /* #FFFFFF */
-    --card-foreground: 240 6% 10%;   /* #18181B */
+    --card-foreground: 207 37% 17%;  /* #1A2B3C Navy */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 6% 10%;
+    --popover-foreground: 207 37% 17%;
 
-    --primary: 217 91% 60%;          /* #3B82F6 */
+    --primary: 207 37% 17%;          /* #1A2B3C Navy */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 96%;         /* #F4F4F5 */
-    --secondary-foreground: 240 4% 16%;  /* #52525B */
+    --secondary: 35 20% 96%;         /* Light off-white */
+    --secondary-foreground: 207 37% 17%;
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;  /* #A1A1AA */
+    --muted: 35 15% 94%;
+    --muted-foreground: 207 20% 45%;
 
-    --accent: 217 91% 60%;           /* #3B82F6 */
-    --accent-foreground: 0 0% 100%;
-    --accent-subtle: 214 100% 97%;   /* #EFF6FF */
+    --accent: 42 44% 57%;            /* #C5A059 Gold */
+    --accent-foreground: 207 37% 17%;
+    --accent-subtle: 42 44% 95%;     /* Very light gold */
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -38,21 +38,21 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 240 6% 90%;            /* #E4E4E7 */
-    --input: 240 6% 90%;
-    --ring: 217 91% 60%;
+    --border: 35 15% 88%;            /* Soft grey-gold border */
+    --input: 35 15% 88%;
+    --ring: 42 44% 57%;              /* Gold ring */
 
     --radius: 0.5rem;
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 6% 10%;
-    --sidebar-border: 240 6% 90%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-foreground: 207 37% 17%;
+    --sidebar-border: 35 15% 88%;
+    --sidebar-primary: 207 37% 17%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 214 100% 97%;
-    --sidebar-accent-foreground: 217 91% 60%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 42 44% 95%;
+    --sidebar-accent-foreground: 207 37% 17%;
+    --sidebar-ring: 42 44% 57%;
 
     /* Spacing system (base 4px) */
     --space-1: 0.25rem;   /* 4px */

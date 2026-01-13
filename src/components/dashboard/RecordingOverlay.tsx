@@ -99,6 +99,78 @@ export function RecordingOverlay({
     setEmailDialogOpen(true);
   };
 
+  const renderMarkdown = (text: string) => {
+    const lines = text.split('\n');
+    const elements: JSX.Element[] = [];
+    let currentList: string[] = [];
+    let listKey = 0;
+
+    const flushList = () => {
+      if (currentList.length > 0) {
+        elements.push(
+          <ul key={`list-${listKey++}`} className="list-none space-y-2 my-3">
+            {currentList.map((item, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className="text-gold mt-1">•</span>
+                <span className="flex-1">{item}</span>
+              </li>
+            ))}
+          </ul>
+        );
+        currentList = [];
+      }
+    };
+
+    lines.forEach((line, index) => {
+      // H2 heading (##)
+      if (line.startsWith('## ')) {
+        flushList();
+        elements.push(
+          <h2 key={index} className="text-lg font-serif font-bold text-navy mt-4 mb-2 first:mt-0">
+            {line.slice(3)}
+          </h2>
+        );
+      }
+      // H3 heading (###)
+      else if (line.startsWith('### ')) {
+        flushList();
+        elements.push(
+          <h3 key={index} className="text-base font-serif font-semibold text-navy mt-3 mb-2">
+            {line.slice(4)}
+          </h3>
+        );
+      }
+      // Bullet point (*)
+      else if (line.trim().startsWith('* ')) {
+        currentList.push(line.trim().slice(2));
+      }
+      // Empty line
+      else if (line.trim() === '') {
+        flushList();
+      }
+      // Regular paragraph
+      else if (line.trim()) {
+        flushList();
+        // Handle bold text (**text**)
+        const parts = line.split(/(\*\*.*?\*\*)/);
+        const rendered = parts.map((part, i) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={i} className="font-semibold text-navy">{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        });
+        elements.push(
+          <p key={index} className="my-2">
+            {rendered}
+          </p>
+        );
+      }
+    });
+
+    flushList();
+    return elements;
+  };
+
   const handleSendEmail = async () => {
     if (!clientId || !meetingId || !clientName || !advisorName) {
       toast.error('Missing required information to send email');
@@ -137,15 +209,15 @@ export function RecordingOverlay({
 
   if (state === 'recording') {
     return (
-      <div className="px-12 pt-12 pb-12 max-w-[800px]">
-        <div className="card-minimal p-8 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+      <div className="px-6 pt-6 pb-24 bg-offwhite min-h-screen">
+        <div className="bg-white rounded-xl border border-gold/20 p-5 shadow-sm">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
                 <div className="w-3 h-3 rounded-full bg-destructive animate-pulse" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Recording in Progress</p>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-navy">Recording in Progress</p>
                 <p className="text-xs text-muted-foreground">
                   {meetingType} • {formatTime(elapsed)}
                 </p>
@@ -154,7 +226,7 @@ export function RecordingOverlay({
             <Button
               onClick={onStopRecording}
               variant="outline"
-              className="h-10 px-4 border-border hover:bg-muted"
+              className="w-full h-11 border-navy text-navy hover:bg-navy/5"
             >
               <Square className="w-4 h-4 mr-2 fill-current" strokeWidth={1.5} />
               End Recording
@@ -167,14 +239,14 @@ export function RecordingOverlay({
 
   if (state === 'processing') {
     return (
-      <div className="px-12 pt-12 pb-12 max-w-[800px]">
-        <div className="card-minimal p-8 mb-6">
+      <div className="px-6 pt-6 pb-24 bg-offwhite min-h-screen">
+        <div className="bg-white rounded-xl border border-gold/20 p-5 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-accent-subtle flex items-center justify-center">
-              <Loader2 className="w-5 h-5 text-primary animate-spin" strokeWidth={1.5} />
+            <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center shrink-0">
+              <Loader2 className="w-5 h-5 text-gold animate-spin" strokeWidth={1.5} />
             </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">Processing Recording</p>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-navy">Processing Recording</p>
               <p className="text-xs text-muted-foreground">
                 Transcribing and generating meeting summary...
               </p>
@@ -189,52 +261,52 @@ export function RecordingOverlay({
     // Step 1: Show summary and accept button
     if (!summaryAccepted) {
       return (
-        <div className="px-12 pt-12 pb-12 max-w-[800px] space-y-8">
-          <div className="flex items-center justify-between mb-2">
+        <div className="px-6 pt-6 pb-24 bg-offwhite min-h-screen">
+          <div className="space-y-4">
+            {/* Header */}
             <div>
-              <p className="section-header mb-0">Meeting Summary</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{meetingType}</p>
+              <h2 className="text-xl font-serif font-bold text-navy mb-1">Meeting Summary</h2>
+              <p className="text-xs text-gold uppercase tracking-wider font-semibold">{meetingType}</p>
             </div>
+
+            {/* Action Buttons */}
             <div className="flex items-center gap-2">
               <Button
                 onClick={handleReject}
                 variant="outline"
                 size="sm"
-                className="h-8 border-destructive/20 text-destructive hover:bg-destructive/10"
+                className="h-10 flex-1 border-destructive/20 text-destructive hover:bg-destructive/10"
               >
-                <X className="w-3.5 h-3.5 mr-1.5" />
+                <X className="w-4 h-4 mr-1.5" />
                 Reject
               </Button>
               <Button
                 onClick={handleOpenEmailDialog}
                 variant="outline"
                 size="sm"
-                className="h-8 border-border"
+                className="h-10 px-4 border-gold/30"
                 disabled={emailSending}
               >
                 {emailSending ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Mail className="w-3.5 h-3.5" />
+                  <Mail className="w-4 h-4" />
                 )}
               </Button>
               <Button
                 onClick={handleAcceptSummary}
                 size="sm"
-                className="h-8 bg-primary text-primary-foreground hover:bg-primary/90"
+                className="h-10 flex-1 bg-navy text-white hover:bg-navy/90"
               >
-                <Check className="w-3.5 h-3.5 mr-1.5" />
+                <Check className="w-4 h-4 mr-1.5" />
                 Accept
               </Button>
             </div>
-          </div>
 
-          <div className="card-minimal p-10 border-primary/10 shadow-sm">
-            <div className="prose prose-sm max-w-none">
-              <div className="text-sm text-foreground/90 leading-relaxed space-y-4">
-                {meetingSummary.split('\n').filter(p => p.trim()).map((para, i) => (
-                  <p key={i}>{para}</p>
-                ))}
+            {/* Summary Content */}
+            <div className="bg-white rounded-xl border border-gold/20 p-5 shadow-sm">
+              <div className="text-sm text-navy leading-relaxed">
+                {renderMarkdown(meetingSummary)}
               </div>
             </div>
           </div>

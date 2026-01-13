@@ -47,26 +47,89 @@ const CollapsibleDocument = ({
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
-  const renderContent = (text: string) => {
-    return text.split(/(\*\*.*?\*\*)/).map((part, i) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i} className="font-bold text-primary">{part.slice(2, -2)}</strong>;
+  const renderMarkdown = (text: string) => {
+    const lines = text.split('\n');
+    const elements: JSX.Element[] = [];
+    let currentList: string[] = [];
+    let listKey = 0;
+
+    const flushList = () => {
+      if (currentList.length > 0) {
+        elements.push(
+          <ul key={`list-${listKey++}`} className="list-none space-y-2 my-3">
+            {currentList.map((item, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className="text-gold mt-1">•</span>
+                <span className="flex-1">{item}</span>
+              </li>
+            ))}
+          </ul>
+        );
+        currentList = [];
       }
-      return part;
+    };
+
+    lines.forEach((line, index) => {
+      // H2 heading (##)
+      if (line.startsWith('## ')) {
+        flushList();
+        elements.push(
+          <h2 key={index} className="text-lg font-serif font-bold text-navy mt-4 mb-2 first:mt-0">
+            {line.slice(3)}
+          </h2>
+        );
+      }
+      // H3 heading (###)
+      else if (line.startsWith('### ')) {
+        flushList();
+        elements.push(
+          <h3 key={index} className="text-base font-serif font-semibold text-navy mt-3 mb-2">
+            {line.slice(4)}
+          </h3>
+        );
+      }
+      // Bullet point (*)
+      else if (line.trim().startsWith('* ')) {
+        currentList.push(line.trim().slice(2));
+      }
+      // Empty line
+      else if (line.trim() === '') {
+        flushList();
+      }
+      // Regular paragraph
+      else if (line.trim()) {
+        flushList();
+        // Handle bold text (**text**)
+        const parts = line.split(/(\*\*.*?\*\*)/);
+        const rendered = parts.map((part, i) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={i} className="font-semibold text-navy">{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        });
+        elements.push(
+          <p key={index} className="my-2">
+            {rendered}
+          </p>
+        );
+      }
     });
+
+    flushList();
+    return elements;
   };
 
   return (
-    <div className="border border-border/60 rounded-xl overflow-hidden bg-white shadow-sm mb-4 last:mb-0 transition-all hover:border-primary/20">
+    <div className="border border-gold/20 rounded-lg overflow-hidden bg-white shadow-sm mb-4 last:mb-0 transition-all hover:border-gold/40">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-5 py-3.5 bg-secondary/10 hover:bg-secondary/20 transition-all text-left"
+        className="w-full flex items-center justify-between px-5 py-3.5 bg-offwhite hover:bg-gold/5 transition-all text-left"
       >
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center">
-            <Icon className="w-4 h-4 text-primary" strokeWidth={1.5} />
+          <div className="w-8 h-8 rounded-lg bg-gold/10 flex items-center justify-center">
+            <Icon className="w-4 h-4 text-gold" strokeWidth={1.5} />
           </div>
-          <span className="text-sm font-semibold text-foreground/80">{title}</span>
+          <span className="text-sm font-serif font-semibold text-navy">{title}</span>
         </div>
         <div className="flex items-center gap-3">
           {actions && (
@@ -75,16 +138,16 @@ const CollapsibleDocument = ({
             </div>
           )}
           {isOpen ? (
-            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            <ChevronUp className="w-4 h-4 text-gold" />
           ) : (
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            <ChevronDown className="w-4 h-4 text-gold" />
           )}
         </div>
       </button>
       {isOpen && (
         <div className="p-6 bg-white animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed font-normal">
-            {renderContent(content)}
+          <div className="text-sm text-navy leading-relaxed">
+            {renderMarkdown(content)}
           </div>
         </div>
       )}
@@ -142,10 +205,10 @@ export function MeetingNotesView({ clientId, meetingNotes, clientName, clientEma
   };
 
   return (
-    <div className="px-12 pt-12 pb-12 max-w-[800px]">
+    <div className="px-6 pt-6 pb-24 bg-offwhite min-h-screen">
       {/* Meeting Notes */}
       <section>
-        <h2 className="section-header mb-4">Meeting Notes</h2>
+        <h2 className="text-2xl font-serif font-bold text-navy mb-6">Meeting Notes</h2>
 
         {notes.length === 0 ? (
           <p className="text-sm text-muted-foreground">No meeting notes available.</p>
@@ -158,8 +221,8 @@ export function MeetingNotesView({ clientId, meetingNotes, clientName, clientEma
                 className="border border-border rounded-lg bg-card overflow-hidden"
               >
                 <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-secondary transition-fast">
-                  <div className="flex items-center justify-between w-full gap-3">
-                    <div className="flex items-center gap-3 text-left">
+                  <div className="flex items-center justify-between w-full gap-8">
+                    <div className="flex items-center gap-3 text-left flex-1">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Calendar className="w-4 h-4" strokeWidth={1.5} />
                         {new Date(note.date).toLocaleDateString('en-US', {
@@ -175,7 +238,7 @@ export function MeetingNotesView({ clientId, meetingNotes, clientName, clientEma
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 px-3 gap-2"
+                      className="h-8 px-3 gap-2 mr-6"
                       onClick={(e) => handleOpenEmailDialog(note.id, e)}
                       disabled={sendingEmailFor === note.id}
                     >
@@ -192,20 +255,32 @@ export function MeetingNotesView({ clientId, meetingNotes, clientName, clientEma
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
                   <Tabs defaultValue="actions" className="w-full">
-                    <TabsList className="w-full grid grid-cols-4 mb-4">
-                      <TabsTrigger value="actions" className="gap-2">
+                    <TabsList className="w-full grid grid-cols-4 mb-4 h-auto bg-transparent border-b border-gold/20 rounded-none p-0">
+                      <TabsTrigger
+                        value="actions"
+                        className="gap-2 rounded-none border-b-3 border-transparent data-[state=active]:border-gold data-[state=active]:bg-transparent data-[state=active]:text-navy pb-3 font-sans"
+                      >
                         <CheckSquare className="w-4 h-4" strokeWidth={1.5} />
                         Actions
                       </TabsTrigger>
-                      <TabsTrigger value="summary" className="gap-2">
+                      <TabsTrigger
+                        value="summary"
+                        className="gap-2 rounded-none border-b-3 border-transparent data-[state=active]:border-gold data-[state=active]:bg-transparent data-[state=active]:text-navy pb-3 font-sans"
+                      >
                         <FileText className="w-4 h-4" strokeWidth={1.5} />
                         Summary
                       </TabsTrigger>
-                      <TabsTrigger value="reports" className="gap-2">
+                      <TabsTrigger
+                        value="reports"
+                        className="gap-2 rounded-none border-b-3 border-transparent data-[state=active]:border-gold data-[state=active]:bg-transparent data-[state=active]:text-navy pb-3 font-sans"
+                      >
                         <TrendingUp className="w-4 h-4" strokeWidth={1.5} />
                         Reports
                       </TabsTrigger>
-                      <TabsTrigger value="transcription" className="gap-2">
+                      <TabsTrigger
+                        value="transcription"
+                        className="gap-2 rounded-none border-b-3 border-transparent data-[state=active]:border-gold data-[state=active]:bg-transparent data-[state=active]:text-navy pb-3 font-sans"
+                      >
                         <FileText className="w-4 h-4" strokeWidth={1.5} />
                         Transcription
                       </TabsTrigger>

@@ -62,10 +62,10 @@ export function MainPanel({
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-background min-h-screen">
+    <div className="flex-1 flex flex-col bg-offwhite min-h-screen">
       <ClientHeader client={client} />
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto pb-20">
         {activeView === 'documentation' && <DocumentationView clientId={client.id} />}
         {activeView === 'meeting-notes' && (
           <MeetingNotesView
