@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Mic, Calendar, CheckCircle, FileText } from 'lucide-react';
+import { Mic, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -49,35 +49,35 @@ export function StartMeetingView({
   const canRecord = selectedMeetingType && hasConsent && selectedTranscript;
 
   return (
-    <div className="px-12 pt-12 pb-12 max-w-[800px]">
-      <div className="content-card max-w-lg mx-auto mt-12">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Mic className="w-8 h-8 text-primary" strokeWidth={1.5} />
+    <div className="px-6 pt-6 pb-24 bg-offwhite min-h-screen">
+      <div className="max-w-md mx-auto">
+        {/* Central Microphone Icon */}
+        <div className="flex justify-center mb-8">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center shadow-xl">
+            <Mic className="w-12 h-12 text-white" strokeWidth={1.5} />
           </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">Start a Meeting</h2>
-          <p className="text-sm text-muted-foreground">
-            Select a meeting type and confirm consent to begin recording
-          </p>
         </div>
 
-        <div className="space-y-6">
+        {/* Title */}
+        <h2 className="text-center text-2xl font-serif font-bold text-navy mb-2">Start a Meeting</h2>
+        <p className="text-center text-sm text-muted-foreground mb-8">
+          Select meeting details and confirm client consent to begin recording
+        </p>
+
+        <div className="bg-white rounded-2xl shadow-lg border border-gold/20 p-6 space-y-6">
           {/* Meeting Type Selection */}
           <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">
+            <label className="text-xs font-semibold text-gold/70 mb-2 block uppercase tracking-wide">
               Meeting Type
             </label>
             <Select
               value={selectedMeetingType}
               onValueChange={onMeetingTypeChange}
             >
-              <SelectTrigger className="w-full h-11 bg-card border-border text-sm font-normal px-3 focus:ring-2 focus:ring-offset-0 focus:ring-accent-subtle focus:border-primary">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-                  <SelectValue placeholder="Select meeting type" />
-                </div>
+              <SelectTrigger className="w-full h-12 bg-white border border-gold/30 text-sm px-4 focus:ring-2 focus:ring-gold focus:border-gold rounded-xl">
+                <SelectValue placeholder="Select meeting type" />
               </SelectTrigger>
-              <SelectContent className="bg-card border-border">
+              <SelectContent className="bg-white border-gold/30">
                 {meetingTypes.map((type) => (
                   <SelectItem key={type.id} value={type.id} className="text-sm">
                     {type.label}
@@ -89,20 +89,17 @@ export function StartMeetingView({
 
           {/* Transcript Selection */}
           <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">
-              Select Transcript
+            <label className="text-xs font-semibold text-gold/70 mb-2 block uppercase tracking-wide">
+              Transcript Template
             </label>
             <Select
               value={selectedTranscript}
               onValueChange={onTranscriptChange}
             >
-              <SelectTrigger className="w-full h-11 bg-card border-border text-sm font-normal px-3 focus:ring-2 focus:ring-offset-0 focus:ring-accent-subtle focus:border-primary">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-                  <SelectValue placeholder="Select transcript" />
-                </div>
+              <SelectTrigger className="w-full h-12 bg-white border border-gold/30 text-sm px-4 focus:ring-2 focus:ring-gold focus:border-gold rounded-xl">
+                <SelectValue placeholder="Select transcript" />
               </SelectTrigger>
-              <SelectContent className="bg-card border-border">
+              <SelectContent className="bg-white border-gold/30">
                 {availableTranscripts.map((transcript) => (
                   <SelectItem key={transcript.id} value={transcript.id} className="text-sm">
                     {transcript.label}
@@ -113,48 +110,39 @@ export function StartMeetingView({
           </div>
 
           {/* Consent Checkbox */}
-          <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 border border-border">
-            <Checkbox
-              id="consent"
-              checked={hasConsent}
-              onCheckedChange={(checked) => setHasConsent(checked === true)}
-              className="mt-0.5 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-            />
-            <label
-              htmlFor="consent"
-              className="text-sm text-foreground leading-relaxed cursor-pointer"
-            >
-              I confirm that the client has consented to being recorded
-            </label>
+          <div className="p-4 rounded-xl bg-offwhite border border-gold/30 shadow-sm">
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="consent"
+                checked={hasConsent}
+                onCheckedChange={(checked) => setHasConsent(checked === true)}
+                className="mt-0.5 border-gold/50 data-[state=checked]:bg-gold data-[state=checked]:border-gold data-[state=checked]:text-white"
+              />
+              <label
+                htmlFor="consent"
+                className="text-sm text-navy leading-relaxed cursor-pointer"
+              >
+                I confirm that the client has consented to being recorded and understands the privacy policy.
+              </label>
+            </div>
           </div>
 
           {/* Checklist */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle
-                className={`w-4 h-4 ${selectedMeetingType ? 'text-primary' : 'text-muted-foreground/50'}`}
-                strokeWidth={1.5}
-              />
-              <span className={selectedMeetingType ? 'text-foreground' : 'text-muted-foreground'}>
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center gap-3 text-sm">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${selectedMeetingType ? 'bg-gold' : 'bg-gray-200'}`}>
+                {selectedMeetingType && <CheckCircle className="w-4 h-4 text-white" strokeWidth={2} />}
+              </div>
+              <span className={selectedMeetingType ? 'text-navy font-medium' : 'text-muted-foreground'}>
                 Meeting type selected
               </span>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle
-                className={`w-4 h-4 ${selectedTranscript ? 'text-primary' : 'text-muted-foreground/50'}`}
-                strokeWidth={1.5}
-              />
-              <span className={selectedTranscript ? 'text-foreground' : 'text-muted-foreground'}>
+            <div className="flex items-center gap-3 text-sm">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${selectedTranscript ? 'bg-gold' : 'bg-gray-200'}`}>
+                {selectedTranscript && <CheckCircle className="w-4 h-4 text-white" strokeWidth={2} />}
+              </div>
+              <span className={selectedTranscript ? 'text-navy font-medium' : 'text-muted-foreground'}>
                 Transcript selected
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle
-                className={`w-4 h-4 ${hasConsent ? 'text-primary' : 'text-muted-foreground/50'}`}
-                strokeWidth={1.5}
-              />
-              <span className={hasConsent ? 'text-foreground' : 'text-muted-foreground'}>
-                Consent confirmed
               </span>
             </div>
           </div>
@@ -164,7 +152,7 @@ export function StartMeetingView({
             onClick={onStartRecording}
             disabled={!canRecord}
             size="lg"
-            className="w-full h-12 bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-14 bg-navy text-white text-base font-semibold hover:bg-navy/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl mt-4 shadow-md"
           >
             <Mic className="w-5 h-5 mr-2" strokeWidth={1.5} />
             Start Recording

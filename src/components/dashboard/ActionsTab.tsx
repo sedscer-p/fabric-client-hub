@@ -13,9 +13,9 @@ function ActionItemRow({ action }: { action: ActionItem }) {
 
   return (
     <li className="flex items-start gap-3 py-2">
-      <span className="text-foreground/60 mt-1">•</span>
+      <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${isComplete ? 'bg-gold' : 'bg-gold/60'}`} />
       <div className="flex-1">
-        <p className={`text-sm ${isComplete ? 'text-muted-foreground line-through' : 'text-card-foreground'}`}>
+        <p className={`text-sm ${isComplete ? 'text-muted-foreground line-through' : 'text-navy'}`}>
           {action.text}
         </p>
         {action.dueDate && !isComplete && (
@@ -35,14 +35,14 @@ export function ActionsTab({ clientActions = [], advisorActions = [] }: ActionsT
   return (
     <div className="p-6 space-y-6 animate-fade-in">
       {/* Client Actions */}
-      <Card className="shadow-card">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <User className="w-5 h-5 text-primary" />
+      <Card className="shadow-sm border-t-2 border-t-gold rounded-lg">
+        <CardHeader className="pb-4 border-b border-gold/10">
+          <CardTitle className="flex items-center gap-2 text-base font-serif font-semibold text-navy">
+            <User className="w-5 h-5 text-gold" />
             Client Actions
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           {clientItems.length > 0 ? (
             <ul className="space-y-1">
               {clientItems.map((action) => (
@@ -58,14 +58,14 @@ export function ActionsTab({ clientActions = [], advisorActions = [] }: ActionsT
       </Card>
 
       {/* Advisor Actions */}
-      <Card className="shadow-card">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Briefcase className="w-5 h-5 text-primary" />
+      <Card className="shadow-sm border-t-2 border-t-gold rounded-lg">
+        <CardHeader className="pb-4 border-b border-gold/10">
+          <CardTitle className="flex items-center gap-2 text-base font-serif font-semibold text-navy">
+            <Briefcase className="w-5 h-5 text-gold" />
             Advisor Actions
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           {advisorItems.length > 0 ? (
             <ul className="space-y-1">
               {advisorItems.map((action) => (
