@@ -122,9 +122,12 @@ export async function generateSummary(transcription: string, meetingType: string
     // Enhanced error logging for debugging
     if (error instanceof Error) {
       console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
+      // Pass the actual error message up
+      throw new Error(`Failed to generate meeting summary: ${error.message}`);
     }
 
-    throw new Error('Failed to generate meeting summary');
+    throw new Error('Failed to generate meeting summary: Unknown error');
   }
 }
 

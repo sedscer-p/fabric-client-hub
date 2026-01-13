@@ -4,6 +4,7 @@ import { MainPanel } from '@/components/dashboard/MainPanel';
 import { Client, ViewType, meetingTypes, MeetingNote } from '@/data/mockData';
 import { RecordingState } from '@/components/dashboard/RecordingOverlay';
 import { processMeeting, saveMeetingNote, getAllMeetings, ActionItem } from '@/services/api';
+import { toast } from 'sonner';
 
 const Index = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -84,10 +85,11 @@ const Index = () => {
       setMeetingDate(new Date().toISOString());
     } catch (error: any) {
       console.error('Failed to process meeting:', error);
-      setProcessingError(error.message || 'Failed to process meeting');
+      const errorMessage = error.message || 'Failed to process meeting';
+      setProcessingError(errorMessage);
       setRecordingState('idle');
       setSummaryAccepted(false);
-      // TODO: Show error toast notification
+      toast.error(errorMessage);
     }
   };
 
