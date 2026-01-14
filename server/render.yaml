@@ -1,9 +1,10 @@
 services:
   - type: web
-    name: fabric-backend
+    name: fabric-api
     env: node
     region: oregon
-    buildCommand: npm install
+    rootDir: server                              # Add this - points to your Express app
+    buildCommand: npm install && npm run build   # Add TypeScript compilation
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
@@ -15,4 +16,6 @@ services:
       - key: SENDER_EMAIL
         sync: false
       - key: SENDER_NAME
+        sync: false
+      - key: CORS_ORIGIN                         # Add this for your Vercel frontend
         sync: false
