@@ -4,7 +4,7 @@ services:
     env: node
     region: oregon
     rootDir: server                              # Add this - points to your Express app
-    buildCommand: npm install && npm run build   # Add TypeScript compilation
+    buildCommand: npm install --include=dev && npm run build   # Install devDependencies for TypeScript compilation
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
