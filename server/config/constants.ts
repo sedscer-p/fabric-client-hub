@@ -29,8 +29,8 @@ export const SERVER_CONFIG = {
   // Server port (overridable via PORT env var)
   DEFAULT_PORT: 3001,
 
-  // Frontend origin for CORS
-  FRONTEND_ORIGIN: 'http://localhost:8080',
+  // Frontend origin for CORS (production URL from env, fallback to localhost)
+  FRONTEND_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:8080',
 
   // Maximum size for JSON request bodies
   BODY_SIZE_LIMIT: '50mb',
