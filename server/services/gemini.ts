@@ -31,11 +31,15 @@ export async function generateSummary(transcription: string, meetingType: string
   console.log(`Generating meeting summary with Gemini API (structured outputs) for ${meetingType} meeting...`);
 
   try {
-    // Select prompt based on meeting type
+    // Select prompt and token limit based on meeting type
     // Use discovery prompt for 'discovery', regular prompt for 'regular' and 'annual'
-    const promptKey = meetingType.toLowerCase() === 'discovery'
+    const isDiscovery = meetingType.toLowerCase() === 'discovery';
+    const promptKey = isDiscovery
       ? PROMPTS_CONFIG.MEETING_SUMMARY_DISCOVERY
       : PROMPTS_CONFIG.MEETING_SUMMARY_REGULAR;
+    const maxTokens = isDiscovery
+      ? GEMINI_CONFIG.MAX_TOKENS.DISCOVERY_MEETING_SUMMARY
+      : GEMINI_CONFIG.MAX_TOKENS.MEETING_SUMMARY;
 
     // Load prompt template (used as system instruction)
     const promptPath = path.join(__dirname, '../', promptKey);
@@ -68,7 +72,7 @@ export async function generateSummary(transcription: string, meetingType: string
       model: GEMINI_CONFIG.MODEL,
       contents: transcription,  // Transcript as main content
       config: {
-        maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.MEETING_SUMMARY,
+        maxOutputTokens: maxTokens,
         temperature: GEMINI_CONFIG.TEMPERATURE,
         responseMimeType: GEMINI_CONFIG.RESPONSE_MIME_TYPE,
         responseSchema: responseSchema,
