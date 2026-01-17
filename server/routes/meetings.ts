@@ -89,8 +89,8 @@ router.post('/process', async (req: Request, res: Response) => {
 
     console.log(`Processing meeting for client ${clientId}, type: ${meetingType}, transcript: ${transcriptFile}`);
 
-    // Load selected transcript from transcripts folder (at repo root)
-    const transcriptPath = path.join(__dirname, '../../../transcripts', `${transcriptFile}.txt`);
+    // Load selected transcript from transcripts folder (at repo root, one level up from server/)
+    const transcriptPath = path.join(process.cwd(), '../transcripts', `${transcriptFile}.txt`);
     const transcription = await fs.readFile(transcriptPath, 'utf-8');
 
     // Generate AI summary with structured outputs (pass meeting type)

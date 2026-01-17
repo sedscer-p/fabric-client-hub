@@ -11,7 +11,7 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 // Email configuration from environment variables
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'onboarding@resend.dev';
-const SENDER_NAME = process.env.SENDER_NAME || 'Fabric Client Management';
+const SENDER_NAME = process.env.SENDER_NAME || 'Fabric';
 
 /**
  * Email sending options

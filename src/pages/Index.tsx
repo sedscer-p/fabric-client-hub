@@ -258,10 +258,7 @@ const Index = () => {
         <div className="px-6 pt-6 pb-4 bg-white border-b border-gold/20">
           <div className="flex items-center gap-3">
             <Logo className="h-10 w-10" />
-            <div>
-              <div className="text-xs text-gold font-semibold tracking-wide">FABRIC AI</div>
-              <div className="text-lg font-serif font-bold text-navy">Client Hub</div>
-            </div>
+            <div className="text-xl font-serif font-bold text-navy">Fabric</div>
           </div>
         </div>
       )}

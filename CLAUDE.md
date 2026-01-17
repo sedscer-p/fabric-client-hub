@@ -1,5 +1,5 @@
 ## Project Summary
-**Fabric** is a client management dashboard for financial advisors, enabling AI-powered meeting recording, summarization, and discovery report generation.
+**Fabric** is a meeting notes platform for financial advisors, enabling AI-powered meeting recording, summarization, and discovery report generation.
 
 ## Developement Practices
 - Utilize .env for sensitive information.

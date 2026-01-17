@@ -106,7 +106,7 @@ export const ERROR_MESSAGES = {
 export const EMAIL_CONFIG = {
   // Email sender details (from environment variables)
   SENDER_EMAIL: process.env.SENDER_EMAIL || 'onboarding@resend.dev',
-  SENDER_NAME: process.env.SENDER_NAME || 'Fabric Client Management',
+  SENDER_NAME: process.env.SENDER_NAME || 'Fabric',
 
   // Rate limiting (emails per minute per user)
   RATE_LIMIT: {
