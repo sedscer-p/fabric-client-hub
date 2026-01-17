@@ -38,7 +38,7 @@ export async function generateSummary(transcription: string, meetingType: string
       : PROMPTS_CONFIG.MEETING_SUMMARY_REGULAR;
 
     // Load prompt template (used as system instruction)
-    const promptPath = path.join(__dirname, '../../', promptKey);
+    const promptPath = path.join(__dirname, '../', promptKey);
     const systemInstruction = await fs.readFile(promptPath, 'utf-8');
 
     // Define structured output schema
@@ -240,11 +240,11 @@ export async function generateDocument(transcription: string, documentType: stri
 
   try {
     // 1. Load the system prompt template
-    const promptPath = path.join(__dirname, '../../', PROMPTS_CONFIG.DOCUMENT_GENERATOR);
+    const promptPath = path.join(__dirname, '../', PROMPTS_CONFIG.DOCUMENT_GENERATOR);
     const systemPromptTemplate = await fs.readFile(promptPath, 'utf-8');
 
     // 2. Load the document description and template data
-    const templatesPath = path.join(__dirname, '../../', PROMPTS_CONFIG.DOCUMENT_TEMPLATES);
+    const templatesPath = path.join(__dirname, '../', PROMPTS_CONFIG.DOCUMENT_TEMPLATES);
     const templatesData = JSON.parse(await fs.readFile(templatesPath, 'utf-8'));
 
     // 3. Find the specific template
