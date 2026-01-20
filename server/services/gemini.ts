@@ -111,9 +111,9 @@ export async function generateSummary(transcription: string, meetingType: string
       required: ["meeting_summary", "adviser_actions", "client_actions"],
     };
 
-    // Call Gemini API with streaming (with retry logic)
-    const stream = await retryWithBackoff(async () => {
-      return await ai.models.generateContentStream({
+    // Call Gemini API with streaming (with retry logic wrapping entire operation)
+    const { responseText, lastCandidate } = await retryWithBackoff(async () => {
+      const stream = await ai.models.generateContentStream({
         model: GEMINI_CONFIG.MODEL,
         contents: transcription,  // Transcript as main content
         config: {
@@ -124,28 +124,48 @@ export async function generateSummary(transcription: string, meetingType: string
           systemInstruction: systemInstruction,  // Prompt as system instruction
         },
       });
-    });
 
-    // Accumulate streamed chunks
-    let responseText = '';
-    let lastCandidate = null;
+      // Accumulate streamed chunks
+      let text = '';
+      let candidate = null;
 
-    for await (const chunk of stream) {
-      if (chunk.candidates && chunk.candidates[0]) {
-        lastCandidate = chunk.candidates[0];
+      try {
+        for await (const chunk of stream) {
+          if (chunk.candidates && chunk.candidates[0]) {
+            candidate = chunk.candidates[0];
 
-        // Check for safety blocks during streaming
-        if (lastCandidate.finishReason === 'SAFETY') {
-          console.error('Response blocked due to safety concerns');
-          throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
+            // Check for safety blocks during streaming
+            if (candidate.finishReason === 'SAFETY') {
+              console.error('Response blocked due to safety concerns');
+              throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
+            }
+          }
+
+          // Accumulate text from each chunk
+          if (chunk.text) {
+            text += chunk.text;
+          }
         }
+      } catch (error: any) {
+        // Convert streaming errors to retryable errors
+        if (error.message?.includes('fetch failed') || error.code === 'ECONNRESET') {
+          // Re-throw with status to trigger retry
+          const retryableError: any = new Error(error.message);
+          retryableError.status = 503;
+          throw retryableError;
+        }
+        throw error;
       }
 
-      // Accumulate text from each chunk
-      if (chunk.text) {
-        responseText += chunk.text;
+      if (!text) {
+        // Empty response should trigger retry
+        const retryableError: any = new Error('Empty response from Gemini API');
+        retryableError.status = 503;
+        throw retryableError;
       }
-    }
+
+      return { responseText: text, lastCandidate: candidate };
+    });
 
     // Check final finish reason
     if (lastCandidate) {
@@ -158,10 +178,6 @@ export async function generateSummary(transcription: string, meetingType: string
         console.error('Unexpected finish reason:', lastCandidate.finishReason);
         throw new Error(ERROR_MESSAGES.AI_SERVICE.FINISH_REASON_ERROR);
       }
-    }
-
-    if (!responseText) {
-      throw new Error('Empty response from Gemini API');
     }
 
     // Parse JSON (guaranteed to be valid by structured outputs)
@@ -258,8 +274,8 @@ ${transcription}`,
     // Run all sections in parallel for efficiency (with retry logic and streaming)
     const results = await Promise.all(
       Object.entries(sections).map(async ([key, prompt]) => {
-        const stream = await retryWithBackoff(async () => {
-          return await ai.models.generateContentStream({
+        const text = await retryWithBackoff(async () => {
+          const stream = await ai.models.generateContentStream({
             model: GEMINI_CONFIG.MODEL,
             contents: prompt,
             config: {
@@ -267,15 +283,33 @@ ${transcription}`,
               temperature: GEMINI_CONFIG.TEMPERATURE,
             },
           });
-        });
 
-        // Accumulate streamed chunks
-        let text = '';
-        for await (const chunk of stream) {
-          if (chunk.text) {
-            text += chunk.text;
+          // Accumulate streamed chunks
+          let accumulatedText = '';
+          try {
+            for await (const chunk of stream) {
+              if (chunk.text) {
+                accumulatedText += chunk.text;
+              }
+            }
+          } catch (error: any) {
+            // Convert streaming errors to retryable errors
+            if (error.message?.includes('fetch failed') || error.code === 'ECONNRESET') {
+              const retryableError: any = new Error(error.message);
+              retryableError.status = 503;
+              throw retryableError;
+            }
+            throw error;
           }
-        }
+
+          if (!accumulatedText) {
+            const retryableError: any = new Error('Empty response from Gemini API');
+            retryableError.status = 503;
+            throw retryableError;
+          }
+
+          return accumulatedText;
+        });
 
         return [key, text] as [string, string];
       })
@@ -331,9 +365,9 @@ export async function generateDocument(transcription: string, documentType: stri
       .replace('{{document_description}}', description)
       .replace('{document_template}', template);
 
-    // 5. Call Gemini API with streaming (with retry logic)
-    const stream = await retryWithBackoff(async () => {
-      return await ai.models.generateContentStream({
+    // 5. Call Gemini API with streaming (with retry logic wrapping entire operation)
+    const responseText = await retryWithBackoff(async () => {
+      const stream = await ai.models.generateContentStream({
         model: GEMINI_CONFIG.MODEL,
         contents: transcription, // Transcription as user message
         config: {
@@ -342,28 +376,42 @@ export async function generateDocument(transcription: string, documentType: stri
           systemInstruction: systemInstruction,
         },
       });
-    });
 
-    // Accumulate streamed chunks
-    let responseText = '';
-    for await (const chunk of stream) {
-      // Check for safety blocks during streaming
-      if (chunk.candidates && chunk.candidates[0]) {
-        const candidate = chunk.candidates[0];
-        if (candidate.finishReason === 'SAFETY') {
-          throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
+      // Accumulate streamed chunks
+      let text = '';
+      try {
+        for await (const chunk of stream) {
+          // Check for safety blocks during streaming
+          if (chunk.candidates && chunk.candidates[0]) {
+            const candidate = chunk.candidates[0];
+            if (candidate.finishReason === 'SAFETY') {
+              throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
+            }
+          }
+
+          // Accumulate text from each chunk
+          if (chunk.text) {
+            text += chunk.text;
+          }
         }
+      } catch (error: any) {
+        // Convert streaming errors to retryable errors
+        if (error.message?.includes('fetch failed') || error.code === 'ECONNRESET') {
+          const retryableError: any = new Error(error.message);
+          retryableError.status = 503;
+          throw retryableError;
+        }
+        throw error;
       }
 
-      // Accumulate text from each chunk
-      if (chunk.text) {
-        responseText += chunk.text;
+      if (!text) {
+        const retryableError: any = new Error('Empty response from Gemini API');
+        retryableError.status = 503;
+        throw retryableError;
       }
-    }
 
-    if (!responseText) {
-      throw new Error('Empty response from Gemini API');
-    }
+      return text;
+    });
 
     console.log(`Document generated successfully (${responseText.length} chars)`);
     return responseText;
