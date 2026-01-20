@@ -21,6 +21,20 @@ export const GEMINI_CONFIG = {
 
   // Response MIME type for structured outputs
   RESPONSE_MIME_TYPE: 'application/json',
+
+  // Network timeouts (fail fast to enable retries)
+  TIMEOUT: {
+    REQUEST_MS: 30000,    // 30s for initial request
+    STREAM_MS: 120000,    // 2 minutes for streaming responses
+  },
+
+  // Retry configuration
+  RETRY: {
+    MAX_RETRIES: 3,
+    INITIAL_DELAY_MS: 2000,  // Start with 2s delay
+    MAX_DELAY_MS: 10000,
+    BACKOFF_MULTIPLIER: 2,   // 2s -> 4s -> 8s
+  },
 } as const;
 
 /**
