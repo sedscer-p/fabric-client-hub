@@ -22,6 +22,50 @@ const ai = new GoogleGenAI({
 });
 
 /**
+ * Retry configuration for API calls
+ */
+const RETRY_CONFIG = {
+  MAX_RETRIES: 3,
+  INITIAL_DELAY_MS: 1000,
+  MAX_DELAY_MS: 10000,
+  BACKOFF_MULTIPLIER: 2,
+};
+
+/**
+ * Helper function to implement exponential backoff retry logic
+ * @param fn - The async function to retry
+ * @param retries - Number of retries remaining
+ * @param delay - Current delay in milliseconds
+ * @returns The result of the function call
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries: number = RETRY_CONFIG.MAX_RETRIES,
+  delay: number = RETRY_CONFIG.INITIAL_DELAY_MS
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error: any) {
+    // Check if error is retryable (503 service overload, 429 rate limit, network errors)
+    const isRetryable =
+      error?.status === 503 ||
+      error?.status === 429 ||
+      error?.code === 'ECONNRESET' ||
+      error?.code === 'ETIMEDOUT';
+
+    if (retries > 0 && isRetryable) {
+      console.warn(`API call failed with ${error?.status || error?.code}, retrying in ${delay}ms... (${retries} retries left)`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      const nextDelay = Math.min(delay * RETRY_CONFIG.BACKOFF_MULTIPLIER, RETRY_CONFIG.MAX_DELAY_MS);
+      return retryWithBackoff(fn, retries - 1, nextDelay);
+    }
+
+    // If not retryable or no retries left, throw the error
+    throw error;
+  }
+}
+
+/**
  * Generate a meeting summary from a transcription using Gemini with structured outputs
  * @param transcription - The meeting transcription text
  * @param meetingType - The type of meeting ('discovery', 'regular', or 'annual')
@@ -67,17 +111,19 @@ export async function generateSummary(transcription: string, meetingType: string
       required: ["meeting_summary", "adviser_actions", "client_actions"],
     };
 
-    // Call Gemini API with structured outputs
-    const response = await ai.models.generateContent({
-      model: GEMINI_CONFIG.MODEL,
-      contents: transcription,  // Transcript as main content
-      config: {
-        maxOutputTokens: maxTokens,
-        temperature: GEMINI_CONFIG.TEMPERATURE,
-        responseMimeType: GEMINI_CONFIG.RESPONSE_MIME_TYPE,
-        responseSchema: responseSchema,
-        systemInstruction: systemInstruction,  // Prompt as system instruction
-      },
+    // Call Gemini API with structured outputs (with retry logic)
+    const response = await retryWithBackoff(async () => {
+      return await ai.models.generateContent({
+        model: GEMINI_CONFIG.MODEL,
+        contents: transcription,  // Transcript as main content
+        config: {
+          maxOutputTokens: maxTokens,
+          temperature: GEMINI_CONFIG.TEMPERATURE,
+          responseMimeType: GEMINI_CONFIG.RESPONSE_MIME_TYPE,
+          responseSchema: responseSchema,
+          systemInstruction: systemInstruction,  // Prompt as system instruction
+        },
+      });
     });
 
     // Check for safety blocks or other issues
@@ -199,16 +245,18 @@ Transcription:
 ${transcription}`,
     };
 
-    // Run all sections in parallel for efficiency
+    // Run all sections in parallel for efficiency (with retry logic)
     const results = await Promise.all(
       Object.entries(sections).map(async ([key, prompt]) => {
-        const response = await ai.models.generateContent({
-          model: GEMINI_CONFIG.MODEL,
-          contents: prompt,
-          config: {
-            maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.DISCOVERY_REPORT,
-            temperature: GEMINI_CONFIG.TEMPERATURE,
-          },
+        const response = await retryWithBackoff(async () => {
+          return await ai.models.generateContent({
+            model: GEMINI_CONFIG.MODEL,
+            contents: prompt,
+            config: {
+              maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.DISCOVERY_REPORT,
+              temperature: GEMINI_CONFIG.TEMPERATURE,
+            },
+          });
         });
 
         const text = response.text || '';
@@ -267,15 +315,17 @@ export async function generateDocument(transcription: string, documentType: stri
       .replace('{{document_description}}', description)
       .replace('{document_template}', template);
 
-    // 5. Call Gemini API
-    const response = await ai.models.generateContent({
-      model: GEMINI_CONFIG.MODEL,
-      contents: transcription, // Transcription as user message
-      config: {
-        maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.MEETING_SUMMARY, // Using same token limit as summary for now
-        temperature: GEMINI_CONFIG.TEMPERATURE,
-        systemInstruction: systemInstruction,
-      },
+    // 5. Call Gemini API (with retry logic)
+    const response = await retryWithBackoff(async () => {
+      return await ai.models.generateContent({
+        model: GEMINI_CONFIG.MODEL,
+        contents: transcription, // Transcription as user message
+        config: {
+          maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.MEETING_SUMMARY, // Using same token limit as summary for now
+          temperature: GEMINI_CONFIG.TEMPERATURE,
+          systemInstruction: systemInstruction,
+        },
+      });
     });
 
     // Check for safety blocks or other issues

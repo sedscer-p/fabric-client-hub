@@ -9,8 +9,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Root data folder path (relative to server root)
-const DATA_FOLDER = path.join(__dirname, '../../data_folder');
+// Root data folder path (relative to project root)
+// In production: /server/dist/services -> /../../../data_folder -> /data_folder
+const DATA_FOLDER = path.join(__dirname, '../../../data_folder');
 
 /**
  * Convert client ID to folder name
