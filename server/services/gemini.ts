@@ -26,9 +26,9 @@ const ai = new GoogleGenAI({
  */
 const RETRY_CONFIG = {
   MAX_RETRIES: 3,
-  INITIAL_DELAY_MS: 1000,
+  INITIAL_DELAY_MS: 2000,  // Start with 2s delay
   MAX_DELAY_MS: 10000,
-  BACKOFF_MULTIPLIER: 2,
+  BACKOFF_MULTIPLIER: 2,   // 2s -> 4s -> 8s
 };
 
 /**
@@ -111,9 +111,9 @@ export async function generateSummary(transcription: string, meetingType: string
       required: ["meeting_summary", "adviser_actions", "client_actions"],
     };
 
-    // Call Gemini API with structured outputs (with retry logic)
-    const response = await retryWithBackoff(async () => {
-      return await ai.models.generateContent({
+    // Call Gemini API with streaming (with retry logic)
+    const stream = await retryWithBackoff(async () => {
+      return await ai.models.generateContentStream({
         model: GEMINI_CONFIG.MODEL,
         contents: transcription,  // Transcript as main content
         config: {
@@ -126,29 +126,39 @@ export async function generateSummary(transcription: string, meetingType: string
       });
     });
 
-    // Check for safety blocks or other issues
-    if (response.candidates && response.candidates[0]) {
-      const candidate = response.candidates[0];
+    // Accumulate streamed chunks
+    let responseText = '';
+    let lastCandidate = null;
 
-      // Check finish reason
-      if (candidate.finishReason === 'SAFETY') {
-        console.error('Response blocked due to safety concerns');
-        throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
+    for await (const chunk of stream) {
+      if (chunk.candidates && chunk.candidates[0]) {
+        lastCandidate = chunk.candidates[0];
+
+        // Check for safety blocks during streaming
+        if (lastCandidate.finishReason === 'SAFETY') {
+          console.error('Response blocked due to safety concerns');
+          throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
+        }
       }
 
-      if (candidate.finishReason === 'MAX_TOKENS') {
+      // Accumulate text from each chunk
+      if (chunk.text) {
+        responseText += chunk.text;
+      }
+    }
+
+    // Check final finish reason
+    if (lastCandidate) {
+      if (lastCandidate.finishReason === 'MAX_TOKENS') {
         console.warn('Response truncated due to token limit');
         throw new Error(ERROR_MESSAGES.AI_SERVICE.TOKEN_LIMIT);
       }
 
-      if (candidate.finishReason !== 'STOP' && candidate.finishReason !== undefined) {
-        console.error('Unexpected finish reason:', candidate.finishReason);
+      if (lastCandidate.finishReason !== 'STOP' && lastCandidate.finishReason !== undefined) {
+        console.error('Unexpected finish reason:', lastCandidate.finishReason);
         throw new Error(ERROR_MESSAGES.AI_SERVICE.FINISH_REASON_ERROR);
       }
     }
-
-    // Extract text from response
-    const responseText = response.text || '';
 
     if (!responseText) {
       throw new Error('Empty response from Gemini API');
@@ -245,11 +255,11 @@ Transcription:
 ${transcription}`,
     };
 
-    // Run all sections in parallel for efficiency (with retry logic)
+    // Run all sections in parallel for efficiency (with retry logic and streaming)
     const results = await Promise.all(
       Object.entries(sections).map(async ([key, prompt]) => {
-        const response = await retryWithBackoff(async () => {
-          return await ai.models.generateContent({
+        const stream = await retryWithBackoff(async () => {
+          return await ai.models.generateContentStream({
             model: GEMINI_CONFIG.MODEL,
             contents: prompt,
             config: {
@@ -259,7 +269,13 @@ ${transcription}`,
           });
         });
 
-        const text = response.text || '';
+        // Accumulate streamed chunks
+        let text = '';
+        for await (const chunk of stream) {
+          if (chunk.text) {
+            text += chunk.text;
+          }
+        }
 
         return [key, text] as [string, string];
       })
@@ -315,9 +331,9 @@ export async function generateDocument(transcription: string, documentType: stri
       .replace('{{document_description}}', description)
       .replace('{document_template}', template);
 
-    // 5. Call Gemini API (with retry logic)
-    const response = await retryWithBackoff(async () => {
-      return await ai.models.generateContent({
+    // 5. Call Gemini API with streaming (with retry logic)
+    const stream = await retryWithBackoff(async () => {
+      return await ai.models.generateContentStream({
         model: GEMINI_CONFIG.MODEL,
         contents: transcription, // Transcription as user message
         config: {
@@ -328,15 +344,22 @@ export async function generateDocument(transcription: string, documentType: stri
       });
     });
 
-    // Check for safety blocks or other issues
-    if (response.candidates && response.candidates[0]) {
-      const candidate = response.candidates[0];
-      if (candidate.finishReason === 'SAFETY') {
-        throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
+    // Accumulate streamed chunks
+    let responseText = '';
+    for await (const chunk of stream) {
+      // Check for safety blocks during streaming
+      if (chunk.candidates && chunk.candidates[0]) {
+        const candidate = chunk.candidates[0];
+        if (candidate.finishReason === 'SAFETY') {
+          throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
+        }
+      }
+
+      // Accumulate text from each chunk
+      if (chunk.text) {
+        responseText += chunk.text;
       }
     }
-
-    const responseText = response.text || '';
 
     if (!responseText) {
       throw new Error('Empty response from Gemini API');

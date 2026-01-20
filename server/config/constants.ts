@@ -10,8 +10,8 @@ export const GEMINI_CONFIG = {
 
   // Token limits for different API call types
   MAX_TOKENS: {
-    MEETING_SUMMARY: 30000,           // For regular meeting summaries with actions
-    DISCOVERY_MEETING_SUMMARY: 40000, // For discovery meeting summaries (more comprehensive, increased to handle long transcripts)
+    MEETING_SUMMARY: 2048,           // For regular meeting summaries with actions
+    DISCOVERY_MEETING_SUMMARY: 4096, // For discovery meeting summaries (more comprehensive)
     DISCOVERY_REPORT: 4096,          // For individual discovery report sections
   },
 
