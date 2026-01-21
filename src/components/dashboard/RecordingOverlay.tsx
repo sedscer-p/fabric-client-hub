@@ -55,7 +55,7 @@ export function RecordingOverlay({
   const [elapsed, setElapsed] = useState(0);
   const [emailSending, setEmailSending] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
-  const [recipientEmail, setRecipientEmail] = useState('s.edscer@gmail.com');
+  const [recipientEmail, setRecipientEmail] = useState('');
   const [includeTranscription, setIncludeTranscription] = useState(false);
 
   useEffect(() => {
@@ -195,8 +195,8 @@ export function RecordingOverlay({
         includeTranscription,
       });
       toast.success(`Meeting summary sent to ${recipientEmail}`);
-      // Reset to default
-      setRecipientEmail('s.edscer@gmail.com');
+      // Reset to empty
+      setRecipientEmail('');
       setIncludeTranscription(false);
     } catch (error: any) {
       toast.error(error.message || 'Failed to send email');
@@ -326,7 +326,7 @@ export function RecordingOverlay({
                   <Input
                     id="email"
                     type="email"
-                    placeholder="email@example.com"
+                    placeholder="Type your email here..."
                     value={recipientEmail}
                     onChange={(e) => setRecipientEmail(e.target.value)}
                   />
