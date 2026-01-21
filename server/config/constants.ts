@@ -11,8 +11,8 @@ export const GEMINI_CONFIG = {
   // Token limits for different API call types
   // NOTE: These control OUTPUT size. Streaming handles long INPUT to prevent timeouts.
   MAX_TOKENS: {
-    MEETING_SUMMARY: 8192,           // For regular meeting summaries with actions
-    DISCOVERY_MEETING_SUMMARY: 12288, // For discovery meeting summaries (more comprehensive)
+    MEETING_SUMMARY: 65536,           // For regular meeting summaries with actions
+    DISCOVERY_MEETING_SUMMARY: 65536, // For discovery meeting summaries (more comprehensive)
     DISCOVERY_REPORT: 4096,          // For individual discovery report sections
   },
 
