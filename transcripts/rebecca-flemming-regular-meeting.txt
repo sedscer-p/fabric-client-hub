@@ -36,13 +36,16 @@ DC: We'll need to do proper analysis, but initial thoughts: maximise pension con
 RF: That's a lot to take in.
 DC: It is. And we don't need to decide everything today. But we should start thinking about it now, so that when the sale happens, we're ready.
 RF: Okay.
-DC: Let's talk briefly about fees. You're currently on our ongoing service at nought point eight five percent of assets under management, plus an annual planning fee for the broader work. Is that still working for you?
-RF: Yes, I think so. The fee feels fair for what we're getting.
-DC: The assets under our management are currently around four hundred thousand – your ISAs and GIA primarily. As your investable assets grow, particularly post-sale, we might want to discuss whether a tiered fee structure makes more sense. Paying nought point eight five percent on ten million would be eighty-five thousand a year, which is a lot.
-RF: Yes, that does seem excessive.
-DC: We typically tier our fees for larger portfolios. Maybe nought point eight five percent on the first million, then nought point six percent up to five million, then nought point four percent above that. It would depend on the services you need.
-RF: That sounds more reasonable. Can we revisit that when the time comes?
-DC: Absolutely. No changes for now – this is just advance planning.
+
+# COMMENTED OUT FOR TESTING - Fee discussion section (lines 39-46)
+# DC: Let's talk briefly about fees. You're currently on our ongoing service at nought point eight five percent of assets under management, plus an annual planning fee for the broader work. Is that still working for you?
+# RF: Yes, I think so. The fee feels fair for what we're getting.
+# DC: The assets under our management are currently around four hundred thousand – your ISAs and GIA primarily. As your investable assets grow, particularly post-sale, we might want to discuss whether a tiered fee structure makes more sense. Paying nought point eight five percent on ten million would be eighty-five thousand a year, which is a lot.
+# RF: Yes, that does seem excessive.
+# DC: We typically tier our fees for larger portfolios. Maybe nought point eight five percent on the first million, then nought point six percent up to five million, then nought point four percent above that. It would depend on the services you need.
+# RF: That sounds more reasonable. Can we revisit that when the time comes?
+# DC: Absolutely. No changes for now – this is just advance planning.
+
 DC: Alright. Before we wrap up, let me just check in on a few other things. Health – how are you both? Any changes?
 RF: I'm fine. Blood pressure is still controlled with medication. Had my annual check-up, all fine.
 MF: I'm good. Touch wood. Fifty years old and still functioning.

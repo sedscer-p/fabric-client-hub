@@ -109,6 +109,11 @@ export async function generateSummary(transcription: string, meetingType: string
     const promptPath = path.join(__dirname, '../', promptKey);
     const systemInstruction = await fs.readFile(promptPath, 'utf-8');
 
+    // Estimate input tokens (rough: 1 token ≈ 4 characters)
+    const estimatedInputTokens = Math.ceil((transcription.length + systemInstruction.length) / 4);
+    console.log(`[TOKEN ESTIMATE] Input: ~${estimatedInputTokens} tokens (${transcription.length} chars transcript + ${systemInstruction.length} chars prompt)`);
+    console.log(`[TOKEN ESTIMATE] Max output tokens: ${maxTokens}`);
+
     // Define structured output schema
     const responseSchema = {
       type: Type.OBJECT,
@@ -228,6 +233,9 @@ export async function generateSummary(transcription: string, meetingType: string
     // Parse JSON (guaranteed to be valid by structured outputs)
     const structuredOutput: MeetingSummaryStructuredOutput = JSON.parse(responseText);
 
+    // Estimate output tokens
+    const estimatedOutputTokens = Math.ceil(responseText.length / 4);
+    console.log(`[TOKEN ESTIMATE] Output: ~${estimatedOutputTokens} tokens (${responseText.length} chars)`);
     console.log(
       `Summary generated successfully: ` +
       `${structuredOutput.meeting_summary.length} chars, ` +
@@ -264,6 +272,10 @@ export async function generateDiscoveryReport(transcription: string): Promise<{
   financialObjectives: string;
 }> {
   console.log('Generating discovery report with Gemini API...');
+
+  // Estimate input tokens for transcript
+  const estimatedTranscriptTokens = Math.ceil(transcription.length / 4);
+  console.log(`[TOKEN ESTIMATE] Transcript: ~${estimatedTranscriptTokens} tokens (${transcription.length} chars)`);
 
   try {
     // Define prompts for each section
@@ -391,6 +403,10 @@ ${transcription}`,
       financialObjectives: string;
     };
 
+    // Estimate total output tokens across all sections
+    const totalOutputChars = Object.values(report).reduce((sum, text) => sum + text.length, 0);
+    const estimatedOutputTokens = Math.ceil(totalOutputChars / 4);
+    console.log(`[TOKEN ESTIMATE] Total output: ~${estimatedOutputTokens} tokens (${totalOutputChars} chars across 4 sections)`);
     console.log('Discovery report generated successfully');
 
     return report;
@@ -413,6 +429,10 @@ export async function generateDocument(transcription: string, documentType: stri
     // 1. Load the system prompt template
     const promptPath = path.join(__dirname, '../', PROMPTS_CONFIG.DOCUMENT_GENERATOR);
     const systemPromptTemplate = await fs.readFile(promptPath, 'utf-8');
+
+    // Estimate input tokens for transcript
+    const estimatedTranscriptTokens = Math.ceil(transcription.length / 4);
+    console.log(`[TOKEN ESTIMATE] Transcript: ~${estimatedTranscriptTokens} tokens (${transcription.length} chars)`);
 
     // 2. Load the document description and template data
     const templatesPath = path.join(__dirname, '../', PROMPTS_CONFIG.DOCUMENT_TEMPLATES);
@@ -506,6 +526,9 @@ export async function generateDocument(transcription: string, documentType: stri
       }
     });
 
+    // Estimate output tokens
+    const estimatedOutputTokens = Math.ceil(responseText.length / 4);
+    console.log(`[TOKEN ESTIMATE] Output: ~${estimatedOutputTokens} tokens (${responseText.length} chars)`);
     console.log(`Document generated successfully (${responseText.length} chars)`);
     return responseText;
 
