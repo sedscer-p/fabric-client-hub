@@ -38,6 +38,41 @@ export const GEMINI_CONFIG = {
 } as const;
 
 /**
+ * Google Cloud Speech-to-Text API Configuration
+ * Settings for audio transcription with Chirp 3 model
+ */
+export const SPEECH_CONFIG = {
+  // API endpoint for Speech-to-Text V2
+  API_ENDPOINT: 'https://speech.googleapis.com/v2',
+
+  // Model configuration (Chirp 3 for best quality)
+  MODEL: 'chirp_3',
+
+  // Language code
+  LANGUAGE_CODE: 'en-US',
+
+  // Audio encoding formats supported
+  SUPPORTED_FORMATS: ['mp3', 'm4a', 'wav', 'webm', 'ogg', 'flac'] as const,
+
+  // Speaker diarization configuration
+  DIARIZATION: {
+    ENABLED: true,
+    MIN_SPEAKERS: 1,
+    MAX_SPEAKERS: 10,
+  },
+
+  // Transcription features
+  FEATURES: {
+    ENABLE_AUTOMATIC_PUNCTUATION: true,
+    ENABLE_WORD_TIME_OFFSETS: true,
+    PROFANITY_FILTER: false,
+  },
+
+  // Maximum audio file size (25MB for API limit)
+  MAX_FILE_SIZE_BYTES: 25 * 1024 * 1024,
+} as const;
+
+/**
  * Server Configuration
  * Express server and CORS settings
  */

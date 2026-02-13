@@ -13,6 +13,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import meetingsRouter from './routes/meetings.js';
+import interviewsRouter from './routes/interviews.js';
 import { SERVER_CONFIG } from './config/constants.js';
 
 const app = express();
@@ -38,6 +39,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // Routes
 app.use('/api/meetings', meetingsRouter);
+app.use('/api/interviews', interviewsRouter);
 
 // Root endpoint - API info
 app.get('/', (req: Request, res: Response) => {
@@ -46,9 +48,11 @@ app.get('/', (req: Request, res: Response) => {
     version: SERVER_CONFIG.API_VERSION,
     status: 'running',
     geminiConfigured: !!process.env.GEMINI_API_KEY,
+    speechConfigured: !!process.env.GOOGLE_SPEECH_API_KEY,
     endpoints: {
       health: '/api/health',
       meetings: '/api/meetings',
+      interviews: '/api/interviews',
     },
     frontend: SERVER_CONFIG.FRONTEND_ORIGIN,
     timestamp: new Date().toISOString(),
@@ -60,6 +64,7 @@ app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
     geminiConfigured: !!process.env.GEMINI_API_KEY,
+    speechConfigured: !!process.env.GOOGLE_SPEECH_API_KEY,
     timestamp: new Date().toISOString(),
   });
 });
@@ -115,6 +120,7 @@ app.listen(PORT, () => {
   console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
   console.log(`📍 Server running on http://localhost:${PORT}`);
   console.log(`🔑 Gemini API: ${maskApiKey(process.env.GEMINI_API_KEY)}`);
+  console.log(`🎤 Speech API: ${maskApiKey(process.env.GOOGLE_SPEECH_API_KEY)}`);
   console.log(`⏰ Started at ${new Date().toISOString()}`);
   console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 });
