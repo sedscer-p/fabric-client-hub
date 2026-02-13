@@ -9,9 +9,11 @@ export const GEMINI_CONFIG = {
   MODEL: 'gemini-3-flash-preview',
 
   // Token limits for different API call types
+  // NOTE: These control OUTPUT size. Streaming handles long INPUT to prevent timeouts.
   MAX_TOKENS: {
-    MEETING_SUMMARY: 8192,     // For structured meeting summaries with actions
-    DISCOVERY_REPORT: 4096,    // For individual discovery report sections
+    MEETING_SUMMARY: 65536,           // For regular meeting summaries with actions
+    DISCOVERY_MEETING_SUMMARY: 65536, // For discovery meeting summaries (more comprehensive)
+    DISCOVERY_REPORT: 4096,          // For individual discovery report sections
   },
 
   // Temperature setting (0-2, lower = more deterministic)
@@ -19,6 +21,20 @@ export const GEMINI_CONFIG = {
 
   // Response MIME type for structured outputs
   RESPONSE_MIME_TYPE: 'application/json',
+
+  // Network timeouts (fail fast to enable retries)
+  TIMEOUT: {
+    REQUEST_MS: 30000,    // 30s for initial request
+    STREAM_MS: 120000,    // 2 minutes for streaming responses
+  },
+
+  // Retry configuration
+  RETRY: {
+    MAX_RETRIES: 3,
+    INITIAL_DELAY_MS: 2000,  // Start with 2s delay
+    MAX_DELAY_MS: 10000,
+    BACKOFF_MULTIPLIER: 2,   // 2s -> 4s -> 8s
+  },
 } as const;
 
 /**
@@ -29,8 +45,8 @@ export const SERVER_CONFIG = {
   // Server port (overridable via PORT env var)
   DEFAULT_PORT: 3001,
 
-  // Frontend origin for CORS
-  FRONTEND_ORIGIN: 'http://localhost:8080',
+  // Frontend origin for CORS (production URL from env, fallback to localhost)
+  FRONTEND_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:8080',
 
   // Maximum size for JSON request bodies
   BODY_SIZE_LIMIT: '50mb',
@@ -106,7 +122,7 @@ export const ERROR_MESSAGES = {
 export const EMAIL_CONFIG = {
   // Email sender details (from environment variables)
   SENDER_EMAIL: process.env.SENDER_EMAIL || 'onboarding@resend.dev',
-  SENDER_NAME: process.env.SENDER_NAME || 'Fabric Client Management',
+  SENDER_NAME: process.env.SENDER_NAME || 'Fabric',
 
   // Rate limiting (emails per minute per user)
   RATE_LIMIT: {

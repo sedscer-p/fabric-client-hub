@@ -22,6 +22,70 @@ const ai = new GoogleGenAI({
 });
 
 /**
+ * Helper function to implement exponential backoff retry logic with detailed error logging
+ * @param fn - The async function to retry
+ * @param retries - Number of retries remaining
+ * @param delay - Current delay in milliseconds
+ * @returns The result of the function call
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries: number = GEMINI_CONFIG.RETRY.MAX_RETRIES,
+  delay: number = GEMINI_CONFIG.RETRY.INITIAL_DELAY_MS
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error: any) {
+    // Enhanced error logging
+    const errorDetails = {
+      message: error?.message,
+      status: error?.status,
+      code: error?.code,
+      name: error?.name,
+      stack: error?.stack?.split('\n')[0], // First line of stack
+    };
+
+    // Check if error is retryable (503 service overload, 429 rate limit, network errors, timeouts)
+    const isRetryable =
+      error?.status === 503 ||
+      error?.status === 429 ||
+      error?.code === 'ECONNRESET' ||
+      error?.code === 'ETIMEDOUT' ||
+      error?.code === 'ENOTFOUND' ||
+      error?.code === 'ABORT_ERR' ||
+      error?.name === 'AbortError' ||
+      error?.message?.includes('fetch failed') ||
+      error?.message?.includes('timeout');
+
+    if (retries > 0 && isRetryable) {
+      console.warn(
+        `[RETRY] API call failed, retrying in ${delay}ms... (${retries} retries left)\n` +
+        `  Error: ${errorDetails.message}\n` +
+        `  Status: ${errorDetails.status || 'N/A'}\n` +
+        `  Code: ${errorDetails.code || 'N/A'}\n` +
+        `  Type: ${errorDetails.name}`
+      );
+      await new Promise(resolve => setTimeout(resolve, delay));
+      const nextDelay = Math.min(delay * GEMINI_CONFIG.RETRY.BACKOFF_MULTIPLIER, GEMINI_CONFIG.RETRY.MAX_DELAY_MS);
+      return retryWithBackoff(fn, retries - 1, nextDelay);
+    }
+
+    // If not retryable or no retries left, log final error and throw
+    console.error(
+      `[FATAL] API call failed after all retries\n` +
+      `  Error: ${errorDetails.message}\n` +
+      `  Status: ${errorDetails.status || 'N/A'}\n` +
+      `  Code: ${errorDetails.code || 'N/A'}\n` +
+      `  Type: ${errorDetails.name}\n` +
+      `  Retryable: ${isRetryable}\n` +
+      `  Stack: ${errorDetails.stack}`
+    );
+
+    throw error;
+  }
+}
+
+/**
  * Generate a meeting summary from a transcription using Gemini with structured outputs
  * @param transcription - The meeting transcription text
  * @param meetingType - The type of meeting ('discovery', 'regular', or 'annual')
@@ -31,15 +95,24 @@ export async function generateSummary(transcription: string, meetingType: string
   console.log(`Generating meeting summary with Gemini API (structured outputs) for ${meetingType} meeting...`);
 
   try {
-    // Select prompt based on meeting type
+    // Select prompt and token limit based on meeting type
     // Use discovery prompt for 'discovery', regular prompt for 'regular' and 'annual'
-    const promptKey = meetingType.toLowerCase() === 'discovery'
+    const isDiscovery = meetingType.toLowerCase() === 'discovery';
+    const promptKey = isDiscovery
       ? PROMPTS_CONFIG.MEETING_SUMMARY_DISCOVERY
       : PROMPTS_CONFIG.MEETING_SUMMARY_REGULAR;
+    const maxTokens = isDiscovery
+      ? GEMINI_CONFIG.MAX_TOKENS.DISCOVERY_MEETING_SUMMARY
+      : GEMINI_CONFIG.MAX_TOKENS.MEETING_SUMMARY;
 
     // Load prompt template (used as system instruction)
-    const promptPath = path.join(__dirname, '../../', promptKey);
+    const promptPath = path.join(__dirname, '../', promptKey);
     const systemInstruction = await fs.readFile(promptPath, 'utf-8');
+
+    // Estimate input tokens (rough: 1 token ≈ 4 characters)
+    const estimatedInputTokens = Math.ceil((transcription.length + systemInstruction.length) / 4);
+    console.log(`[TOKEN ESTIMATE] Input: ~${estimatedInputTokens} tokens (${transcription.length} chars transcript + ${systemInstruction.length} chars prompt)`);
+    console.log(`[TOKEN ESTIMATE] Max output tokens: ${maxTokens}`);
 
     // Define structured output schema
     const responseSchema = {
@@ -63,50 +136,106 @@ export async function generateSummary(transcription: string, meetingType: string
       required: ["meeting_summary", "adviser_actions", "client_actions"],
     };
 
-    // Call Gemini API with structured outputs
-    const response = await ai.models.generateContent({
-      model: GEMINI_CONFIG.MODEL,
-      contents: transcription,  // Transcript as main content
-      config: {
-        maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.MEETING_SUMMARY,
-        temperature: GEMINI_CONFIG.TEMPERATURE,
-        responseMimeType: GEMINI_CONFIG.RESPONSE_MIME_TYPE,
-        responseSchema: responseSchema,
-        systemInstruction: systemInstruction,  // Prompt as system instruction
-      },
+    // Call Gemini API with streaming (with retry logic wrapping entire operation)
+    const { responseText, lastCandidate } = await retryWithBackoff(async () => {
+      // Create AbortController for timeout handling
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.warn(`[TIMEOUT] Request exceeded ${GEMINI_CONFIG.TIMEOUT.STREAM_MS}ms, aborting...`);
+        abortController.abort();
+      }, GEMINI_CONFIG.TIMEOUT.STREAM_MS);
+
+      try {
+        const stream = await ai.models.generateContentStream({
+          model: GEMINI_CONFIG.MODEL,
+          contents: transcription,  // Transcript as main content
+          config: {
+            maxOutputTokens: maxTokens,
+            temperature: GEMINI_CONFIG.TEMPERATURE,
+            responseMimeType: GEMINI_CONFIG.RESPONSE_MIME_TYPE,
+            responseSchema: responseSchema,
+            systemInstruction: systemInstruction,  // Prompt as system instruction
+          },
+        });
+
+        // Accumulate streamed chunks
+        let text = '';
+        let candidate = null;
+
+        try {
+          for await (const chunk of stream) {
+            // Check if aborted
+            if (abortController.signal.aborted) {
+              throw new Error('Request timeout');
+            }
+
+            if (chunk.candidates && chunk.candidates[0]) {
+              candidate = chunk.candidates[0];
+
+              // Check for safety blocks during streaming
+              if (candidate.finishReason === 'SAFETY') {
+                console.error('Response blocked due to safety concerns');
+                throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
+              }
+            }
+
+            // Accumulate text from each chunk
+            if (chunk.text) {
+              text += chunk.text;
+            }
+          }
+        } catch (error: any) {
+          // Convert streaming errors to retryable errors
+          if (error.message?.includes('fetch failed') ||
+              error.message?.includes('timeout') ||
+              error.code === 'ECONNRESET' ||
+              error.name === 'AbortError') {
+            // Re-throw with status to trigger retry
+            const retryableError: any = new Error(error.message);
+            retryableError.status = 503;
+            retryableError.code = error.code || 'NETWORK_ERROR';
+            throw retryableError;
+          }
+          throw error;
+        } finally {
+          // Clear timeout
+          clearTimeout(timeoutId);
+        }
+
+        if (!text) {
+          // Empty response should trigger retry
+          const retryableError: any = new Error('Empty response from Gemini API');
+          retryableError.status = 503;
+          throw retryableError;
+        }
+
+        return { responseText: text, lastCandidate: candidate };
+      } catch (error: any) {
+        // Ensure timeout is cleared even if outer error occurs
+        clearTimeout(timeoutId);
+        throw error;
+      }
     });
 
-    // Check for safety blocks or other issues
-    if (response.candidates && response.candidates[0]) {
-      const candidate = response.candidates[0];
-
-      // Check finish reason
-      if (candidate.finishReason === 'SAFETY') {
-        console.error('Response blocked due to safety concerns');
-        throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
-      }
-
-      if (candidate.finishReason === 'MAX_TOKENS') {
+    // Check final finish reason
+    if (lastCandidate) {
+      if (lastCandidate.finishReason === 'MAX_TOKENS') {
         console.warn('Response truncated due to token limit');
         throw new Error(ERROR_MESSAGES.AI_SERVICE.TOKEN_LIMIT);
       }
 
-      if (candidate.finishReason !== 'STOP' && candidate.finishReason !== undefined) {
-        console.error('Unexpected finish reason:', candidate.finishReason);
+      if (lastCandidate.finishReason !== 'STOP' && lastCandidate.finishReason !== undefined) {
+        console.error('Unexpected finish reason:', lastCandidate.finishReason);
         throw new Error(ERROR_MESSAGES.AI_SERVICE.FINISH_REASON_ERROR);
       }
-    }
-
-    // Extract text from response
-    const responseText = response.text || '';
-
-    if (!responseText) {
-      throw new Error('Empty response from Gemini API');
     }
 
     // Parse JSON (guaranteed to be valid by structured outputs)
     const structuredOutput: MeetingSummaryStructuredOutput = JSON.parse(responseText);
 
+    // Estimate output tokens
+    const estimatedOutputTokens = Math.ceil(responseText.length / 4);
+    console.log(`[TOKEN ESTIMATE] Output: ~${estimatedOutputTokens} tokens (${responseText.length} chars)`);
     console.log(
       `Summary generated successfully: ` +
       `${structuredOutput.meeting_summary.length} chars, ` +
@@ -143,6 +272,10 @@ export async function generateDiscoveryReport(transcription: string): Promise<{
   financialObjectives: string;
 }> {
   console.log('Generating discovery report with Gemini API...');
+
+  // Estimate input tokens for transcript
+  const estimatedTranscriptTokens = Math.ceil(transcription.length / 4);
+  console.log(`[TOKEN ESTIMATE] Transcript: ~${estimatedTranscriptTokens} tokens (${transcription.length} chars)`);
 
   try {
     // Define prompts for each section
@@ -195,19 +328,69 @@ Transcription:
 ${transcription}`,
     };
 
-    // Run all sections in parallel for efficiency
+    // Run all sections in parallel for efficiency (with retry logic and streaming)
     const results = await Promise.all(
       Object.entries(sections).map(async ([key, prompt]) => {
-        const response = await ai.models.generateContent({
-          model: GEMINI_CONFIG.MODEL,
-          contents: prompt,
-          config: {
-            maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.DISCOVERY_REPORT,
-            temperature: GEMINI_CONFIG.TEMPERATURE,
-          },
-        });
+        const text = await retryWithBackoff(async () => {
+          // Create AbortController for timeout handling
+          const abortController = new AbortController();
+          const timeoutId = setTimeout(() => {
+            console.warn(`[TIMEOUT] Discovery report section "${key}" exceeded ${GEMINI_CONFIG.TIMEOUT.STREAM_MS}ms, aborting...`);
+            abortController.abort();
+          }, GEMINI_CONFIG.TIMEOUT.STREAM_MS);
 
-        const text = response.text || '';
+          try {
+            const stream = await ai.models.generateContentStream({
+              model: GEMINI_CONFIG.MODEL,
+              contents: prompt,
+              config: {
+                maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.DISCOVERY_REPORT,
+                temperature: GEMINI_CONFIG.TEMPERATURE,
+              },
+            });
+
+            // Accumulate streamed chunks
+            let accumulatedText = '';
+            try {
+              for await (const chunk of stream) {
+                // Check if aborted
+                if (abortController.signal.aborted) {
+                  throw new Error('Request timeout');
+                }
+
+                if (chunk.text) {
+                  accumulatedText += chunk.text;
+                }
+              }
+            } catch (error: any) {
+              // Convert streaming errors to retryable errors
+              if (error.message?.includes('fetch failed') ||
+                  error.message?.includes('timeout') ||
+                  error.code === 'ECONNRESET' ||
+                  error.name === 'AbortError') {
+                const retryableError: any = new Error(error.message);
+                retryableError.status = 503;
+                retryableError.code = error.code || 'NETWORK_ERROR';
+                throw retryableError;
+              }
+              throw error;
+            } finally {
+              clearTimeout(timeoutId);
+            }
+
+            if (!accumulatedText) {
+              const retryableError: any = new Error('Empty response from Gemini API');
+              retryableError.status = 503;
+              throw retryableError;
+            }
+
+            return accumulatedText;
+          } catch (error: any) {
+            // Ensure timeout is cleared even if outer error occurs
+            clearTimeout(timeoutId);
+            throw error;
+          }
+        });
 
         return [key, text] as [string, string];
       })
@@ -220,6 +403,10 @@ ${transcription}`,
       financialObjectives: string;
     };
 
+    // Estimate total output tokens across all sections
+    const totalOutputChars = Object.values(report).reduce((sum, text) => sum + text.length, 0);
+    const estimatedOutputTokens = Math.ceil(totalOutputChars / 4);
+    console.log(`[TOKEN ESTIMATE] Total output: ~${estimatedOutputTokens} tokens (${totalOutputChars} chars across 4 sections)`);
     console.log('Discovery report generated successfully');
 
     return report;
@@ -240,11 +427,15 @@ export async function generateDocument(transcription: string, documentType: stri
 
   try {
     // 1. Load the system prompt template
-    const promptPath = path.join(__dirname, '../../', PROMPTS_CONFIG.DOCUMENT_GENERATOR);
+    const promptPath = path.join(__dirname, '../', PROMPTS_CONFIG.DOCUMENT_GENERATOR);
     const systemPromptTemplate = await fs.readFile(promptPath, 'utf-8');
 
+    // Estimate input tokens for transcript
+    const estimatedTranscriptTokens = Math.ceil(transcription.length / 4);
+    console.log(`[TOKEN ESTIMATE] Transcript: ~${estimatedTranscriptTokens} tokens (${transcription.length} chars)`);
+
     // 2. Load the document description and template data
-    const templatesPath = path.join(__dirname, '../../', PROMPTS_CONFIG.DOCUMENT_TEMPLATES);
+    const templatesPath = path.join(__dirname, '../', PROMPTS_CONFIG.DOCUMENT_TEMPLATES);
     const templatesData = JSON.parse(await fs.readFile(templatesPath, 'utf-8'));
 
     // 3. Find the specific template
@@ -263,31 +454,81 @@ export async function generateDocument(transcription: string, documentType: stri
       .replace('{{document_description}}', description)
       .replace('{document_template}', template);
 
-    // 5. Call Gemini API
-    const response = await ai.models.generateContent({
-      model: GEMINI_CONFIG.MODEL,
-      contents: transcription, // Transcription as user message
-      config: {
-        maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.MEETING_SUMMARY, // Using same token limit as summary for now
-        temperature: GEMINI_CONFIG.TEMPERATURE,
-        systemInstruction: systemInstruction,
-      },
+    // 5. Call Gemini API with streaming (with retry logic wrapping entire operation)
+    const responseText = await retryWithBackoff(async () => {
+      // Create AbortController for timeout handling
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.warn(`[TIMEOUT] Document generation for "${documentType}" exceeded ${GEMINI_CONFIG.TIMEOUT.STREAM_MS}ms, aborting...`);
+        abortController.abort();
+      }, GEMINI_CONFIG.TIMEOUT.STREAM_MS);
+
+      try {
+        const stream = await ai.models.generateContentStream({
+          model: GEMINI_CONFIG.MODEL,
+          contents: transcription, // Transcription as user message
+          config: {
+            maxOutputTokens: GEMINI_CONFIG.MAX_TOKENS.MEETING_SUMMARY, // Using same token limit as summary for now
+            temperature: GEMINI_CONFIG.TEMPERATURE,
+            systemInstruction: systemInstruction,
+          },
+        });
+
+        // Accumulate streamed chunks
+        let text = '';
+        try {
+          for await (const chunk of stream) {
+            // Check if aborted
+            if (abortController.signal.aborted) {
+              throw new Error('Request timeout');
+            }
+
+            // Check for safety blocks during streaming
+            if (chunk.candidates && chunk.candidates[0]) {
+              const candidate = chunk.candidates[0];
+              if (candidate.finishReason === 'SAFETY') {
+                throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
+              }
+            }
+
+            // Accumulate text from each chunk
+            if (chunk.text) {
+              text += chunk.text;
+            }
+          }
+        } catch (error: any) {
+          // Convert streaming errors to retryable errors
+          if (error.message?.includes('fetch failed') ||
+              error.message?.includes('timeout') ||
+              error.code === 'ECONNRESET' ||
+              error.name === 'AbortError') {
+            const retryableError: any = new Error(error.message);
+            retryableError.status = 503;
+            retryableError.code = error.code || 'NETWORK_ERROR';
+            throw retryableError;
+          }
+          throw error;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+
+        if (!text) {
+          const retryableError: any = new Error('Empty response from Gemini API');
+          retryableError.status = 503;
+          throw retryableError;
+        }
+
+        return text;
+      } catch (error: any) {
+        // Ensure timeout is cleared even if outer error occurs
+        clearTimeout(timeoutId);
+        throw error;
+      }
     });
 
-    // Check for safety blocks or other issues
-    if (response.candidates && response.candidates[0]) {
-      const candidate = response.candidates[0];
-      if (candidate.finishReason === 'SAFETY') {
-        throw new Error(ERROR_MESSAGES.AI_SERVICE.SAFETY_BLOCK);
-      }
-    }
-
-    const responseText = response.text || '';
-
-    if (!responseText) {
-      throw new Error('Empty response from Gemini API');
-    }
-
+    // Estimate output tokens
+    const estimatedOutputTokens = Math.ceil(responseText.length / 4);
+    console.log(`[TOKEN ESTIMATE] Output: ~${estimatedOutputTokens} tokens (${responseText.length} chars)`);
     console.log(`Document generated successfully (${responseText.length} chars)`);
     return responseText;
 

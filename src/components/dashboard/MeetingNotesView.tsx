@@ -161,7 +161,7 @@ export function MeetingNotesView({ clientId, meetingNotes, clientName, clientEma
   const [sendingEmailFor, setSendingEmailFor] = useState<string | null>(null);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string>('');
-  const [recipientEmail, setRecipientEmail] = useState('s.edscer@gmail.com');
+  const [recipientEmail, setRecipientEmail] = useState('');
   const [includeTranscription, setIncludeTranscription] = useState(false);
 
   const handleOpenEmailDialog = (meetingId: string, event: React.MouseEvent) => {
@@ -194,8 +194,8 @@ export function MeetingNotesView({ clientId, meetingNotes, clientName, clientEma
         includeTranscription,
       });
       toast.success(`Meeting summary sent to ${recipientEmail}`);
-      // Reset to default
-      setRecipientEmail('s.edscer@gmail.com');
+      // Reset to empty
+      setRecipientEmail('');
       setIncludeTranscription(false);
     } catch (error: any) {
       toast.error(error.message || 'Failed to send email');
@@ -391,7 +391,7 @@ export function MeetingNotesView({ clientId, meetingNotes, clientName, clientEma
               <Input
                 id="email-meeting-notes"
                 type="email"
-                placeholder="email@example.com"
+                placeholder="Type your email here..."
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
               />

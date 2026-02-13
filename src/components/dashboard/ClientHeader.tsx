@@ -26,7 +26,7 @@ export function ClientHeader({ client }: ClientHeaderProps) {
         <div className="flex-shrink-0">
           <img
             src="/assets/fabric-logo.png"
-            alt="Fabric AI"
+            alt="Fabric"
             className="h-10 w-10 object-contain"
           />
         </div>

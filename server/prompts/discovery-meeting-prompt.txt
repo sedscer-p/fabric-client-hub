@@ -44,9 +44,6 @@ Identify potential vulnerabilities or risk factors evident from the conversation
 
 ### Financial Resilience
 Document concerns related to income stability, fragmented arrangements, overseas assets, protection gaps, pension consolidation, and currency exposure where evident. For each vulnerability, state the concern clearly, reference the specific circumstance, and note potential impact if unaddressed.
-
-## Actions
-Identify all action items agreed during the meeting and categorize them by assignee.
 </output_structure>
 
 <json_output>
