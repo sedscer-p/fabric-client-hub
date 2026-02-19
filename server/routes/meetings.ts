@@ -72,6 +72,75 @@ router.get('/:clientId', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/meetings/generate
+ * Generate AI summary from transcript (for discovery interviews)
+ */
+router.post('/generate', async (req: Request, res: Response) => {
+  try {
+    const { transcript, meeting_type, client_id } = req.body;
+
+    // Validate request
+    if (!transcript || !meeting_type) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: ERROR_MESSAGES.VALIDATION.MISSING_FIELDS + ': transcript and meeting_type',
+      });
+    }
+
+    console.log(`Generating ${meeting_type} summary for client ${client_id || 'unknown'}`);
+
+    // Generate AI summary with structured outputs
+    const structuredOutput = await generateSummary(transcript, meeting_type);
+
+    // Generate unique meeting ID and date
+    const meetingId = randomUUID();
+    const meetingDate = new Date().toISOString();
+
+    // Save action items to JSON files if client_id is provided
+    if (client_id) {
+      try {
+        await saveMeetingActions(
+          client_id,
+          meetingId,
+          meetingDate,
+          meeting_type,
+          structuredOutput.client_actions,
+          structuredOutput.adviser_actions
+        );
+      } catch (fileError) {
+        console.error('Failed to save action items to files:', fileError);
+      }
+    }
+
+    console.log(`Summary generated successfully. Meeting ID: ${meetingId}`);
+
+    res.json({
+      success: true,
+      data: {
+        meetingId,
+        meetingDate,
+        summary: structuredOutput.meeting_summary,
+        structuredData: structuredOutput,
+      },
+    });
+  } catch (error: any) {
+    console.error('Summary generation error:', error);
+
+    if (error.message.includes('Failed to generate')) {
+      return res.status(502).json({
+        error: 'AI service error',
+        message: error.message || ERROR_MESSAGES.AI_SERVICE.GENERATION_FAILED,
+      });
+    }
+
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.message || ERROR_MESSAGES.SERVER.INTERNAL_ERROR,
+    });
+  }
+});
+
+/**
  * POST /api/meetings/process
  * Process a meeting recording and generate AI summary
  */

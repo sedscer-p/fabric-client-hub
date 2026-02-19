@@ -38,15 +38,15 @@ export const GEMINI_CONFIG = {
 } as const;
 
 /**
- * Google Cloud Speech-to-Text API Configuration
+ * Google Cloud Speech-to-Text V2 API Configuration
  * Settings for audio transcription with Chirp 3 model
  */
 export const SPEECH_CONFIG = {
-  // API endpoint for Speech-to-Text V2
-  API_ENDPOINT: 'https://speech.googleapis.com/v2',
-
-  // Model configuration (Chirp 3 for best quality)
+  // Model configuration (Chirp 3 for best multilingual quality)
   MODEL: 'chirp_3',
+
+  // Regional endpoint (required for Chirp 3)
+  REGION: 'us',
 
   // Language code
   LANGUAGE_CODE: 'en-US',
@@ -68,8 +68,8 @@ export const SPEECH_CONFIG = {
     PROFANITY_FILTER: false,
   },
 
-  // Maximum audio file size (25MB for API limit)
-  MAX_FILE_SIZE_BYTES: 25 * 1024 * 1024,
+  // Maximum audio file size (10MB for synchronous recognition)
+  MAX_FILE_SIZE_BYTES: 10 * 1024 * 1024,
 } as const;
 
 /**

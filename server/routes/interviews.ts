@@ -19,7 +19,7 @@ const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 25 * 1024 * 1024, // 25MB limit
+    fileSize: 100 * 1024 * 1024, // 100MB limit (will warn if too long for sync recognition)
   },
   fileFilter: (req, file, cb) => {
     const supportedFormats = getSupportedAudioFormats();
@@ -50,23 +50,19 @@ router.post('/transcribe', upload.single('audio'), async (req: Request, res: Res
       });
     }
 
-    // Get API key from environment
-    const apiKey = process.env.GOOGLE_SPEECH_API_KEY;
-    if (!apiKey) {
-      console.error('GOOGLE_SPEECH_API_KEY not configured');
-      return res.status(500).json({
-        error: 'Configuration error',
-        message: 'Speech-to-Text API is not configured. Please set GOOGLE_SPEECH_API_KEY in environment variables.',
-      });
+    const audioBuffer = req.file.buffer;
+    const audioFormat = req.file.originalname.split('.').pop()?.toLowerCase() || 'webm';
+    const fileSizeMB = audioBuffer.length / 1024 / 1024;
+
+    console.log(`Transcribing audio file: ${req.file.originalname} (${fileSizeMB.toFixed(2)}MB), format: ${audioFormat}, mimetype: ${req.file.mimetype}`);
+
+    // Warn if file is large (Google has ~10MB/60s limit for synchronous recognition)
+    if (fileSizeMB > 10) {
+      console.warn(`⚠️ Large audio file (${fileSizeMB.toFixed(2)}MB). Synchronous recognition works best for <1 min audio. Consider using shorter clips.`);
     }
 
-    const audioBuffer = req.file.buffer;
-    const audioFormat = req.file.originalname.split('.').pop()?.toLowerCase() || 'mp3';
-
-    console.log(`Transcribing audio file: ${req.file.originalname} (${(audioBuffer.length / 1024 / 1024).toFixed(2)}MB)`);
-
-    // Transcribe audio with speaker diarization
-    const result = await transcribeAudio(audioBuffer, audioFormat, apiKey);
+    // Transcribe audio with speaker diarization using service account
+    const result = await transcribeAudio(audioBuffer, audioFormat);
 
     console.log(`Transcription complete: ${result.duration_seconds.toFixed(2)}s, ${result.speakers.length} speaker segments`);
 

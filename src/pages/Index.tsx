@@ -5,6 +5,7 @@ import { SettingsPage } from '@/components/dashboard/SettingsPage';
 import { MeetingNotesView } from '@/components/dashboard/MeetingNotesView';
 import { StartMeetingView } from '@/components/dashboard/StartMeetingView';
 import { RecordingOverlay, RecordingState } from '@/components/dashboard/RecordingOverlay';
+import { NewInterviewView } from '@/components/dashboard/NewInterviewView';
 import { Client, ViewType, meetingTypes, MeetingNote, clients } from '@/data/mockData';
 import { processMeeting, saveMeetingNote, getAllMeetings, ActionItem } from '@/services/api';
 import { toast } from 'sonner';
@@ -164,6 +165,8 @@ const Index = () => {
   };
 
   const renderView = () => {
+    console.log('Current activeView:', activeView, 'selectedClient:', selectedClient?.name);
+
     // Show client selection if no client selected
     if (!selectedClient) {
       return <HomePage onClientSelect={handleClientSelect} />;
@@ -195,7 +198,10 @@ const Index = () => {
     // Render view based on active tab
     switch (activeView) {
       case 'home':
-        return <HomePage onClientSelect={handleClientSelect} />;
+        return <HomePage
+          onClientSelect={handleClientSelect}
+          onNewInterview={() => setActiveView('new-interview')}
+        />;
       case 'meeting-notes':
         return (
           <>
@@ -212,21 +218,7 @@ const Index = () => {
           </>
         );
       case 'start-meeting':
-        return (
-          <>
-            <StartMeetingView
-              clientId={selectedClient.id}
-              selectedMeetingType={selectedMeetingType}
-              onMeetingTypeChange={setSelectedMeetingType}
-              selectedTranscript={selectedTranscript}
-              onTranscriptChange={setSelectedTranscript}
-              onStartRecording={handleStartRecording}
-            />
-            <div className="fixed bottom-20 right-6 text-xs text-gray-300 font-mono pointer-events-none">
-              v0.1
-            </div>
-          </>
-        );
+        return <NewInterviewView onBack={() => setActiveView('meeting-notes')} />;
       case 'settings':
         return (
           <>
@@ -237,7 +229,10 @@ const Index = () => {
           </>
         );
       default:
-        return <HomePage onClientSelect={handleClientSelect} />;
+        return <HomePage
+          onClientSelect={handleClientSelect}
+          onNewInterview={() => setActiveView('new-interview')}
+        />;
     }
   };
 

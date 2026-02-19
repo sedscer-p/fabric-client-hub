@@ -26,6 +26,9 @@ dist-ssr
 #API env file
 *.env
 
+# Google Cloud credentials
+google-credentials.json
+
 # Data folder - ignore meeting data but keep structure
 data_folder/*/*
 !data_folder/README.md
